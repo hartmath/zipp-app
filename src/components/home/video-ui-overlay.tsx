@@ -99,6 +99,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
 
   // Check if user has liked this post, if user is blocked, fetch view count and follower count
   useEffect(() => {
+    if (!isActive) return; // Only fetch when the card is active to reduce flicker and load
     const checkStatus = async () => {
       try {
         // Only check like status if we have a valid user session
@@ -206,10 +207,11 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
     };
     
     checkStatus();
-  }, [id, user?.id]);
+  }, [id, user?.id, isActive]);
 
-  // Track view when component mounts (only once per device for this clip)
+  // Track view only when active and after short watch time
   useEffect(() => {
+    if (!isActive) return;
     const trackView = async () => {
       if (id && !hasTrackedView) {
         try {
@@ -240,7 +242,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
     // Track view after 3 seconds to ensure real watch time
     const timer = setTimeout(trackView, 3000);
     return () => clearTimeout(timer);
-  }, [id, hasTrackedView]);
+  }, [id, hasTrackedView, isActive]);
 
   // Fetch zipper count and preview of latest zipper
   useEffect(() => {
