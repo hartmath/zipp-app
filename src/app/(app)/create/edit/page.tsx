@@ -367,6 +367,8 @@ export default function EditPage() {
 
   // Avoid sessionStorage during render
   const [hasMusic, setHasMusic] = useState(false);
+  const [activeTool, setActiveTool] = useState<'edit' | 'crop' | 'adjust' | 'rotate' | 'speed' | 'sound' | 'text' | 'effect' | 'magic'>('edit');
+  
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -430,8 +432,6 @@ export default function EditPage() {
 
   // Cleanup ticker on unmount
   useEffect(() => () => { if (tickerRef.current) clearInterval(tickerRef.current); }, []);
-
-  const [activeTool, setActiveTool] = useState<'edit' | 'crop' | 'adjust' | 'rotate' | 'speed' | 'sound' | 'text' | 'effect' | 'magic'>('edit');
 
   return (
     <div className="flex h-full w-full flex-col bg-black text-white">
@@ -651,26 +651,26 @@ export default function EditPage() {
             onAddAudioAt={() => router.push('/create/music')}
           />
           {/* panels removed to match provided design */}
+        </div>
 
-          {/* Bottom toolbar */}
-          <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 py-2 px-3 pb-[env(safe-area-inset-bottom)]">
-            <div className="mx-auto max-w-md overflow-x-auto">
-              <div className="min-w-[560px] grid grid-cols-9 gap-3 text-center text-[11px] text-white/90">
-                <ToolbarItem label="Edit" icon={<Scissors className="h-4 w-4" />} active={activeTool==='edit'} onClick={() => setActiveTool('edit')} />
-                <ToolbarItem label="Crop" icon={<CropIcon className="h-4 w-4" />} active={activeTool==='crop'} onClick={() => setActiveTool('crop')} />
-                <ToolbarItem label="Adjust" icon={<SlidersHorizontal className="h-4 w-4" />} active={activeTool==='adjust'} onClick={() => setActiveTool('adjust')} />
-                <ToolbarItem label="Rotate" icon={<RotateIcon className="h-4 w-4" />} active={activeTool==='rotate'} onClick={() => setActiveTool('rotate')} />
-                <ToolbarItem label="Speed" icon={<Gauge className="h-4 w-4" />} active={activeTool==='speed'} onClick={() => setActiveTool('speed')} />
-                <ToolbarItem label="Sound" icon={<Music className="h-4 w-4" />} active={activeTool==='sound'} onClick={() => setActiveTool('sound')} />
-                <ToolbarItem label="Text" icon={<TypeIcon className="h-4 w-4" />} active={activeTool==='text'} onClick={() => setActiveTool('text')} />
-                <ToolbarItem label="Effect" icon={<Sparkles className="h-4 w-4" />} active={activeTool==='effect'} onClick={() => setActiveTool('effect')} />
-                <ToolbarItem label="Magic" icon={<Wand2 className="h-4 w-4" />} active={activeTool==='magic'} onClick={() => setActiveTool('magic')} />
-              </div>
+        {/* Bottom toolbar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 py-2 px-3 pb-[env(safe-area-inset-bottom)]">
+          <div className="mx-auto max-w-md overflow-x-auto">
+            <div className="min-w-[560px] grid grid-cols-9 gap-3 text-center text-[11px] text-white/90">
+              <ToolbarItem label="Edit" icon={<Scissors className="h-4 w-4" />} active={activeTool==='edit'} onClick={() => setActiveTool('edit')} />
+              <ToolbarItem label="Crop" icon={<CropIcon className="h-4 w-4" />} active={activeTool==='crop'} onClick={() => setActiveTool('crop')} />
+              <ToolbarItem label="Adjust" icon={<SlidersHorizontal className="h-4 w-4" />} active={activeTool==='adjust'} onClick={() => setActiveTool('adjust')} />
+              <ToolbarItem label="Rotate" icon={<RotateIcon className="h-4 w-4" />} active={activeTool==='rotate'} onClick={() => setActiveTool('rotate')} />
+              <ToolbarItem label="Speed" icon={<Gauge className="h-4 w-4" />} active={activeTool==='speed'} onClick={() => setActiveTool('speed')} />
+              <ToolbarItem label="Sound" icon={<Music className="h-4 w-4" />} active={activeTool==='sound'} onClick={() => setActiveTool('sound')} />
+              <ToolbarItem label="Text" icon={<TypeIcon className="h-4 w-4" />} active={activeTool==='text'} onClick={() => setActiveTool('text')} />
+              <ToolbarItem label="Effect" icon={<Sparkles className="h-4 w-4" />} active={activeTool==='effect'} onClick={() => setActiveTool('effect')} />
+              <ToolbarItem label="Magic" icon={<Wand2 className="h-4 w-4" />} active={activeTool==='magic'} onClick={() => setActiveTool('magic')} />
             </div>
-            <div className="mt-2 flex justify-between max-w-md mx-auto text-xs text-white/50">
-              <span />
-              <span />
-            </div>
+          </div>
+          <div className="mt-2 flex justify-between max-w-md mx-auto text-xs text-white/50">
+            <span />
+            <span />
           </div>
         </div>
       </main>
