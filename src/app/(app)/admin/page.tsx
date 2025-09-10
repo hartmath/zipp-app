@@ -16,7 +16,7 @@ export default function AdminDashboardPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login');
+        router.push('/admin/login');
         return;
       }
       const { data: profile } = await supabase
@@ -25,7 +25,7 @@ export default function AdminDashboardPage() {
         .eq('id', user.id)
         .single();
       if (!profile?.is_admin) {
-        router.push('/');
+        router.push('/admin/login');
         return;
       }
       setIsAdmin(true);
