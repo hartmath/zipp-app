@@ -83,4 +83,9 @@ export function subscribeToCart(callback: (count: number) => void): () => void {
   return () => window.removeEventListener('cart:updated', handler as EventListener);
 }
 
+export function openCartDrawer(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event('cart:open'));
+}
+
 

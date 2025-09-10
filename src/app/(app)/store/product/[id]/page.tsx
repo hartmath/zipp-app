@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
-import { addToCart } from '@/lib/cart';
+import { addToCart, openCartDrawer } from '@/lib/cart';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -61,6 +61,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   className="bg-teal-600 hover:bg-teal-700"
                   onClick={() => {
                     addToCart({ id: product.id, name: product.name, price: product.price, image_url: product.image_url }, 1);
+                    openCartDrawer();
                   }}
                 >
                   Add to Cart

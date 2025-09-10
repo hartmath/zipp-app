@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
-import { getCartCount, subscribeToCart, addToCart } from '@/lib/cart';
+import { getCartCount, subscribeToCart, addToCart, openCartDrawer } from '@/lib/cart';
 
 const navItems = [
     { href: '/events', label: 'Events' },
@@ -234,7 +234,7 @@ export default function ShopPage() {
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-teal-400 font-bold">${p.price}</span>
                               <div className="flex items-center gap-2">
-                                <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => addToCart({ id: p.id, name: p.name, price: p.price, image_url: p.image_url }, 1)}>
+                                <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => { addToCart({ id: p.id, name: p.name, price: p.price, image_url: p.image_url }, 1); openCartDrawer(); }}>
                                   Add to Cart
                                 </Button>
                                 <Button size="sm" variant="outline" className="border-gray-700 text-white hover:bg-gray-800" asChild>
