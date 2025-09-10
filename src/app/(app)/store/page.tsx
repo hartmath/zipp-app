@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { LogoLarge } from '@/components/common/logo';
-import { getPublicStores, searchStores } from '@/lib/store-utils';
+import { getPublicStores, searchStores, getPublicProducts, searchProducts } from '@/lib/store-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 
 const navItems = [
@@ -93,9 +94,11 @@ function ShopHeader() {
 export default function ShopPage() {
   const { toast } = useToast();
   const [stores, setStores] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [productResults, setProductResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
@@ -104,14 +107,22 @@ export default function ShopPage() {
 
   const fetchStores = async () => {
     setLoading(true);
-    const result = await getPublicStores(20, 0);
+    const [storesRes, productsRes] = await Promise.all([
+      getPublicStores(20, 0),
+      getPublicProducts(20, 0)
+    ]);
     
-    if (result.success) {
-      setStores(result.data?.stores || []);
+    if (storesRes.success) {
+      setStores(storesRes.data?.stores || []);
     } else {
-      // Don't show error toast for missing table - just show empty state
-      console.log('Store fetch result:', result);
+      console.log('Store fetch result:', storesRes);
       setStores([]);
+    }
+    if (productsRes.success) {
+      setProducts(productsRes.data?.products || []);
+    } else {
+      console.log('Products fetch result:', productsRes);
+      setProducts([]);
     }
     
     setLoading(false);
@@ -122,25 +133,35 @@ export default function ShopPage() {
     
     if (!query.trim()) {
       setSearchResults([]);
+      setProductResults([]);
       setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
-    const result = await searchStores(query, 10);
+    const [storesSearch, productsSearch] = await Promise.all([
+      searchStores(query, 10),
+      searchProducts(query, 10)
+    ]);
     
-    if (result.success) {
-      setSearchResults(result.data || []);
+    if (storesSearch.success) {
+      setSearchResults(storesSearch.data || []);
     } else {
-      // Don't show error toast for missing table - just show empty results
-      console.log('Store search result:', result);
+      console.log('Store search result:', storesSearch);
       setSearchResults([]);
+    }
+    if (productsSearch.success) {
+      setProductResults(productsSearch.data || []);
+    } else {
+      console.log('Product search result:', productsSearch);
+      setProductResults([]);
     }
     
     setIsSearching(false);
   };
 
   const displayStores = searchQuery ? searchResults : stores;
+  const displayProducts = searchQuery ? productResults : products;
 
   return (
     <div className="h-screen bg-black text-white overflow-hidden">
@@ -173,62 +194,93 @@ export default function ShopPage() {
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
             </div>
-          ) : displayStores.length === 0 ? (
-            <div className="text-center py-12">
-              <Store className="w-16 h-16 mx-auto text-gray-600 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                {searchQuery ? 'No stores found' : 'No stores available'}
-              </h3>
-              <p className="text-gray-400 text-sm">
-                {searchQuery 
-                  ? 'Try searching with different keywords'
-                  : 'Be the first to create a store!'
-                }
-              </p>
-            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {displayStores.map((store) => (
-                <Card key={store.id} className="bg-gray-900 border-gray-800">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-                        {store.profiles?.avatar_url ? (
-                          <Image
-                            src={store.profiles.avatar_url}
-                            alt={store.business_name}
-                            width={48}
-                            height={48}
-                            className="w-12 h-12 object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <Store className="w-6 h-6 text-gray-400" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base truncate">{store.business_name}</CardTitle>
-                        <CardDescription className="truncate">@{store.profiles?.username}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    {store.description && (
-                      <p className="text-gray-300 text-sm line-clamp-2 mb-3">{store.description}</p>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span>{store.business_type === 'business' ? 'Business' : 'Individual'}</span>
-                        <span>{store.address ? '📍 Local' : '🌐 Online'}</span>
-                      </div>
-                      <Button size="sm" className="bg-teal-600 hover:bg-teal-700" asChild>
-                        <Link href={`/store/${store.id}`} prefetch={false}>View Store</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Tabs defaultValue="products" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-gray-900 border border-gray-800">
+                <TabsTrigger value="products" className="data-[state=active]:bg-teal-600">Products ({displayProducts.length})</TabsTrigger>
+                <TabsTrigger value="stores" className="data-[state=active]:bg-teal-600">Stores ({displayStores.length})</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="products" className="mt-6">
+                {displayProducts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="w-16 h-16 mx-auto text-gray-600 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">{searchQuery ? 'No products found' : 'No products yet'}</h3>
+                    <p className="text-gray-400 text-sm">{searchQuery ? 'Try different keywords' : 'Creators will add products soon.'}</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {displayProducts.map((p) => (
+                      <Card key={p.id} className="bg-gray-900 border-gray-800">
+                        <CardContent className="p-0">
+                          {p.image_url && (
+                            <div className="w-full h-40 bg-gray-800 overflow-hidden rounded-t-lg">
+                              <Image src={p.image_url} alt={p.name} width={640} height={320} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          )}
+                          <div className="p-4">
+                            <h4 className="font-semibold text-white mb-1 truncate">{p.name}</h4>
+                            <p className="text-gray-400 text-sm line-clamp-2 mb-2">{p.description}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-teal-400 font-bold">${p.price}</span>
+                              <Button size="sm" variant="outline" className="border-gray-700 text-white hover:bg-gray-800" asChild>
+                                <Link href={`/store/product/${p.id}`} prefetch={false}>View</Link>
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="stores" className="mt-6">
+                {displayStores.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Store className="w-16 h-16 mx-auto text-gray-600 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">{searchQuery ? 'No stores found' : 'No stores available'}</h3>
+                    <p className="text-gray-400 text-sm">{searchQuery ? 'Try searching with different keywords' : 'Be the first to create a store!'}</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {displayStores.map((store) => (
+                      <Card key={store.id} className="bg-gray-900 border-gray-800">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
+                              {store.profiles?.avatar_url ? (
+                                <Image src={store.profiles.avatar_url} alt={store.business_name} width={48} height={48} className="w-12 h-12 object-cover" loading="lazy" />
+                              ) : (
+                                <Store className="w-6 h-6 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base truncate">{store.business_name}</CardTitle>
+                              <CardDescription className="truncate">@{store.profiles?.username}</CardDescription>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          {store.description && (
+                            <p className="text-gray-300 text-sm line-clamp-2 mb-3">{store.description}</p>
+                          )}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>{store.business_type === 'business' ? 'Business' : 'Individual'}</span>
+                              <span>{store.address ? '📍 Local' : '🌐 Online'}</span>
+                            </div>
+                            <Button size="sm" className="bg-teal-600 hover:bg-teal-700" asChild>
+                              <Link href={`/store/${store.id}`} prefetch={false}>View Store</Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </div>
 

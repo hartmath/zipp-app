@@ -114,6 +114,78 @@ export async function getPublicStores(limit: number = 20, offset: number = 0): P
 }
 
 /**
+ * Get public, available products across all stores
+ */
+export async function getPublicProducts(limit: number = 20, offset: number = 0): Promise<StoreResponse> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    const { data, error, count } = await supabase
+      .from('store_products')
+      .select('*', { count: 'exact' })
+      .eq('is_available', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return {
+      success: true,
+      data: {
+        products: data || [],
+        total: count || 0,
+      }
+    };
+  } catch (error: any) {
+    console.error('Error fetching public products:', error);
+    // Gracefully handle missing tables in early setups
+    if (error.message?.includes('relation "store_products" does not exist') ||
+        error.message?.includes('Failed to fetch')) {
+      return {
+        success: true,
+        data: { products: [], total: 0 }
+      };
+    }
+    return { success: false, error: error.message || 'Failed to fetch products' };
+  }
+}
+
+/**
+ * Search public products
+ */
+export async function searchProducts(query: string, limit: number = 20): Promise<StoreResponse> {
+  try {
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+
+    const { data, error } = await supabase
+      .from('store_products')
+      .select('*')
+      .eq('is_available', true)
+      .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { success: true, data: data || [] };
+  } catch (error: any) {
+    console.error('Error searching products:', error);
+    if (error.message?.includes('relation "store_products" does not exist') ||
+        error.message?.includes('Failed to fetch')) {
+      return { success: true, data: [] };
+    }
+    return { success: false, error: error.message || 'Failed to search products' };
+  }
+}
+
+/**
  * Get store products
  */
 export async function getStoreProducts(storeId: string): Promise<StoreResponse> {
