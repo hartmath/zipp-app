@@ -65,16 +65,9 @@ export async function getPublicStores(limit: number = 20, offset: number = 0): P
       throw new Error('Supabase client not available');
     }
 
-    const { data, error, count } = await supabase
+    const { data: stores, error, count } = await supabase
       .from('creator_stores')
-      .select(`
-        *,
-        profiles (
-          username,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select(`*`, { count: 'exact' })
       .eq('is_public', true)
       .eq('is_store_open', true)
       .order('created_at', { ascending: false })
@@ -84,10 +77,25 @@ export async function getPublicStores(limit: number = 20, offset: number = 0): P
       throw new Error(error.message);
     }
 
+    // Batch load profiles if possible (no FK relationship required)
+    let enriched = stores || [];
+    const userIds = Array.from(new Set((stores || []).map((s: any) => s.user_id ?? s.owner_id).filter(Boolean)));
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds as string[]);
+      const map = new Map((profs || []).map((p: any) => [p.id, p]));
+      enriched = (stores || []).map((s: any) => ({
+        ...s,
+        profiles: map.get(s.user_id ?? s.owner_id) || null,
+      }));
+    }
+
     return {
       success: true,
       data: {
-        stores: data || [],
+        stores: enriched,
         total: count || 0
       }
     };
@@ -439,16 +447,9 @@ export async function searchStores(query: string, limit: number = 20): Promise<S
       throw new Error('Supabase client not available');
     }
 
-    const { data, error } = await supabase
+    const { data: stores, error } = await supabase
       .from('creator_stores')
-      .select(`
-        *,
-        profiles (
-          username,
-          full_name,
-          avatar_url
-        )
-      `)
+      .select(`*`)
       .eq('is_public', true)
       .eq('is_store_open', true)
       .or(`business_name.ilike.%${query}%,description.ilike.%${query}%`)
@@ -458,9 +459,23 @@ export async function searchStores(query: string, limit: number = 20): Promise<S
       throw new Error(error.message);
     }
 
+    let enriched = stores || [];
+    const userIds = Array.from(new Set((stores || []).map((s: any) => s.user_id ?? s.owner_id).filter(Boolean)));
+    if (userIds.length > 0) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .in('id', userIds as string[]);
+      const map = new Map((profs || []).map((p: any) => [p.id, p]));
+      enriched = (stores || []).map((s: any) => ({
+        ...s,
+        profiles: map.get(s.user_id ?? s.owner_id) || null,
+      }));
+    }
+
     return {
       success: true,
-      data: data || []
+      data: enriched
     };
   } catch (error: any) {
     console.error('Error searching stores:', error);

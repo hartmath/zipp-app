@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { LogoLarge } from '@/components/common/logo';
-import { getPublicStores, searchStores, getPublicProducts, searchProducts } from '@/lib/store-utils';
+import { getPublicStores, searchStores, getPublicProducts, searchProducts, getUserStore, getStoreProducts } from '@/lib/store-utils';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -110,9 +110,29 @@ export default function ShopPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [productResults, setProductResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [myStoreId, setMyStoreId] = useState<string | null>(null);
+  const [myProducts, setMyProducts] = useState<any[]>([]);
+  const [loadingMine, setLoadingMine] = useState(true);
 
   useEffect(() => {
     fetchStores();
+  }, []);
+
+  useEffect(() => {
+    const loadMine = async () => {
+      setLoadingMine(true);
+      const res = await getUserStore();
+      if (res.success && res.data?.id) {
+        setMyStoreId(res.data.id);
+        const prods = await getStoreProducts(res.data.id);
+        if (prods.success) setMyProducts(prods.data || []);
+      } else {
+        setMyStoreId(null);
+        setMyProducts([]);
+      }
+      setLoadingMine(false);
+    };
+    loadMine();
   }, []);
 
   const fetchStores = async () => {
@@ -172,6 +192,7 @@ export default function ShopPage() {
 
   const displayStores = searchQuery ? searchResults : stores;
   const displayProducts = searchQuery ? productResults : products;
+  const fmtCurrency = (n: number | string) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(n) || 0);
 
   return (
     <div className="h-full bg-black text-white overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))]">
@@ -209,6 +230,9 @@ export default function ShopPage() {
               <TabsList className="grid w-full grid-cols-2 bg-gray-900 border border-gray-800">
                 <TabsTrigger value="products" className="data-[state=active]:bg-teal-600">Products ({displayProducts.length})</TabsTrigger>
                 <TabsTrigger value="stores" className="data-[state=active]:bg-teal-600">Stores ({displayStores.length})</TabsTrigger>
+                {myStoreId && (
+                  <TabsTrigger value="mine" className="data-[state=active]:bg-teal-600">My Products ({myProducts.length})</TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="products" className="mt-6">
@@ -232,7 +256,7 @@ export default function ShopPage() {
                             <h4 className="font-semibold text-white mb-1 truncate">{p.name}</h4>
                             <p className="text-gray-400 text-sm line-clamp-2 mb-2">{p.description}</p>
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-teal-400 font-bold">${p.price}</span>
+                              <span className="text-teal-400 font-bold">{fmtCurrency(p.price)}</span>
                               <div className="flex items-center gap-2">
                                 <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => { addToCart({ id: p.id, name: p.name, price: p.price, image_url: p.image_url }, 1); openCartDrawer(); }}>
                                   Add to Cart
@@ -295,6 +319,44 @@ export default function ShopPage() {
                   </div>
                 )}
               </TabsContent>
+
+              {myStoreId && (
+                <TabsContent value="mine" className="mt-6">
+                  {loadingMine ? (
+                    <div className="flex items-center justify-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400"></div>
+                    </div>
+                  ) : myProducts.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400">You have no products yet.</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {myProducts.map((p) => (
+                        <Card key={p.id} className="bg-gray-900 border-gray-800">
+                          <CardContent className="p-0">
+                            {p.image_url && (
+                              <div className="w-full h-40 bg-gray-800 overflow-hidden rounded-t-lg">
+                                <Image src={p.image_url} alt={p.name} width={640} height={320} className="w-full h-full object-cover" loading="lazy" />
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <h4 className="font-semibold text-white mb-1 truncate">{p.name}</h4>
+                              <p className="text-gray-400 text-sm line-clamp-2 mb-2">{p.description}</p>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-teal-400 font-bold">{fmtCurrency(p.price)}</span>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => { addToCart({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, storeId: myStoreId }, 1); openCartDrawer(); }}>
+                                    Add to Cart
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              )}
             </Tabs>
           )}
         </div>

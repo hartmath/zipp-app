@@ -67,16 +67,19 @@ export default function CreatorStoreSetupPage() {
 
       if (store) {
         setExistingStore(store);
-        setFormData({
+        setFormData(prev => ({
+          ...prev,
           business_name: store.business_name || '',
           business_type: store.business_type || 'individual',
           description: store.description || '',
           address: store.address || '',
           email: store.email || '',
           phone_number: store.phone_number || '',
-          is_public: store.is_public || false,
-          is_store_open: store.is_store_open || false
-        });
+          is_public: Boolean(store.is_public),
+          is_store_open: Boolean(store.is_store_open),
+          logo_url: store.logo_url || prev.logo_url || '',
+          store_link: store.store_link || prev.store_link || ''
+        }));
       }
     };
 
