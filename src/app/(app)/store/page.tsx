@@ -25,7 +25,7 @@ const navItems = [
 ];
 
 function ShopHeader() {
-  const pathname = usePathname();
+    const pathname = usePathname();
   const [hasStore, setHasStore] = React.useState(false);
   const [cartCount, setCartCount] = React.useState<number>(0);
 
@@ -58,24 +58,24 @@ function ShopHeader() {
     };
   }, []);
 
-  return (
-    <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 text-white">
-      <div className="flex items-center gap-4 pl-2">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'text-xs font-medium transition-colors',
-              pathname === item.href
-                ? 'text-white border-b-2 border-white pb-0.5'
-                : 'text-white/60 hover:text-white/90'
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
-      </div>
+    return (
+        <header className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-3 text-white">
+            <div className="flex items-center gap-4 pl-2">
+                {navItems.map((item) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            'text-xs font-medium transition-colors',
+                            pathname === item.href
+                                ? 'text-white border-b-2 border-white pb-0.5'
+                                : 'text-white/60 hover:text-white/90'
+                        )}
+                    >
+                        {item.label}
+                    </Link>
+                ))}
+            </div>
       <div className="flex items-center gap-2 pr-2">
         {hasStore && (
           <Button variant="ghost" size="sm" className="h-7 px-2 text-white/80 hover:bg-transparent hover:text-white" asChild>
@@ -87,18 +87,18 @@ function ShopHeader() {
         )}
         <Button variant="ghost" size="sm" className="relative h-7 w-7 p-0 text-white/80 hover:bg-transparent hover:text-white" asChild>
           <Link href="/store/cart">
-            <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="h-5 w-5" />
             <span className="sr-only">Cart</span>
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-teal-600 text-white text-[10px] rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">
                 {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
-          </Link>
-        </Button>
+              </Link>
+            </Button>
       </div>
-    </header>
-  );
+        </header>
+    );
 }
 
 export default function ShopPage() {
@@ -276,24 +276,24 @@ export default function ShopPage() {
 
               <TabsContent value="stores" className="mt-6">
                 {displayStores.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Store className="w-16 h-16 mx-auto text-gray-600 mb-4" />
+            <div className="text-center py-12">
+              <Store className="w-16 h-16 mx-auto text-gray-600 mb-4" />
                     <h3 className="text-lg font-semibold mb-2">{searchQuery ? 'No stores found' : 'No stores available'}</h3>
                     <p className="text-gray-400 text-sm">{searchQuery ? 'Try searching with different keywords' : 'Be the first to create a store!'}</p>
-                  </div>
-                ) : (
+            </div>
+          ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {displayStores.map((store) => (
+              {displayStores.map((store) => (
                       <Card key={store.id} className="bg-gray-900 border-gray-800">
                         <CardHeader className="pb-2">
-                          <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3">
                             <div className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center overflow-hidden">
-                              {store.profiles?.avatar_url ? (
+                      {store.profiles?.avatar_url ? (
                                 <Image src={store.profiles.avatar_url} alt={store.business_name} width={48} height={48} className="w-12 h-12 object-cover" loading="lazy" />
-                              ) : (
-                                <Store className="w-6 h-6 text-gray-400" />
-                              )}
-                            </div>
+                      ) : (
+                        <Store className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-base truncate">{store.business_name}</CardTitle>
                               <CardDescription className="truncate">@{store.profiles?.username}</CardDescription>
@@ -301,7 +301,7 @@ export default function ShopPage() {
                           </div>
                         </CardHeader>
                         <CardContent className="pt-0">
-                          {store.description && (
+                      {store.description && (
                             <p className="text-gray-300 text-sm line-clamp-2 mb-3">{store.description}</p>
                           )}
                           <div className="flex items-center justify-between">
@@ -316,7 +316,7 @@ export default function ShopPage() {
                         </CardContent>
                       </Card>
                     ))}
-                  </div>
+                      </div>
                 )}
               </TabsContent>
 
@@ -346,14 +346,14 @@ export default function ShopPage() {
                                 <div className="flex items-center gap-2">
                                   <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => { addToCart({ id: p.id, name: p.name, price: p.price, image_url: p.image_url, storeId: myStoreId }, 1); openCartDrawer(); }}>
                                     Add to Cart
-                                  </Button>
-                                </div>
-                              </div>
+                    </Button>
+                  </div>
+                </div>
                             </div>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
+              ))}
+            </div>
                   )}
                 </TabsContent>
               )}
