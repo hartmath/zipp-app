@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
 import { DraftService, CreateDraftData } from '@/lib/drafts';
 import { saveBlob } from '@/lib/media-store';
 
@@ -79,7 +77,7 @@ export default function CreatePage() {
   
   // Zipplign Core Feature: 3-Minute Video Duration Limit
   const MAX_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
-  const [durationTimer, setDurationTimer] = useState<NodeJS.Timeout | null>(null);
+  const [durationTimer, setDurationTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   
   // Draft functionality
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
@@ -298,7 +296,7 @@ export default function CreatePage() {
         media_type: mediaData?.type,
         song: selectedMusic ? `${selectedMusic.title} - ${selectedMusic.artist}` : undefined,
         song_avatar_url: selectedMusic?.image,
-        spotify_preview_url: selectedMusic?.preview_url || null,
+        music_preview_url: selectedMusic?.preview_url || null,
         is_public: false
       };
 

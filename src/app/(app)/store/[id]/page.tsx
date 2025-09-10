@@ -86,10 +86,10 @@ export default function StoreDetailPage() {
         // Last-resort fallback: select all and map
         if (!storeRow) {
           const resAll = await supabase
-            .from('creator_stores')
+          .from('creator_stores')
             .select('*')
-            .eq('id', storeId)
-            .single();
+          .eq('id', storeId)
+          .single();
           if (resAll.data) {
             const d: any = resAll.data;
             storeRow = {

@@ -172,6 +172,67 @@ export default function PostPage() {
     return await res.blob();
   };
 
+  // Compose final edited image (filters, rotation, crop, overlays)
+  const renderEditedImage = async (url: string): Promise<Blob> => {
+    return new Promise<Blob>(async (resolve, reject) => {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return reject(new Error('Canvas context not available'));
+
+          // Read edit params from sessionStorage
+          const brightness = Number(sessionStorage.getItem('brightness') || 100);
+          const contrast = Number(sessionStorage.getItem('contrast') || 100);
+          const saturation = Number(sessionStorage.getItem('saturation') || 100);
+          const rotation = Number(sessionStorage.getItem('rotation') || 0);
+          const cropZoom = Number(sessionStorage.getItem('cropZoom') || 1);
+          const overlaysJson = sessionStorage.getItem('overlays');
+          const overlays: any[] = overlaysJson ? JSON.parse(overlaysJson) : [];
+
+          // Draw image with filters, rotation, zoom
+          (ctx as any).filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate((rotation * Math.PI) / 180);
+          ctx.scale(cropZoom || 1, cropZoom || 1);
+          ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+          ctx.restore();
+
+          // Draw overlays (text)
+          ctx.filter = 'none';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          overlays.forEach((o) => {
+            if (!o?.text) return;
+            const x = (o.xPct || 50) / 100 * canvas.width;
+            const y = (o.yPct || 50) / 100 * canvas.height;
+            const fontFamily = o.font || 'Inter, Arial, sans-serif';
+            const fontWeight = o.bold ? '700' : '400';
+            const fontStyle = o.italic ? 'italic' : 'normal';
+            const size = Math.max(10, Math.min(200, Number(o.size || 16)));
+            ctx.font = `${fontStyle} ${fontWeight} ${size}px ${fontFamily}`;
+            ctx.fillStyle = o.color || '#ffffff';
+            ctx.fillText(o.text, x, y);
+          });
+
+          canvas.toBlob((blob) => {
+            if (!blob) return reject(new Error('Failed to render image'));
+            resolve(blob);
+          }, 'image/jpeg', 0.92);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = url;
+      } catch (e) {
+        reject(e as any);
+      }
+    });
+  };
+
   // Zipplign Core Feature: Validate video duration
   const validateVideoDuration = (videoBlob: Blob): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -225,7 +286,9 @@ export default function PostPage() {
         console.log('Media type:', media.type);
         console.log('Media URL length:', media.url.length);
         
-        const blob = await getBlobFromUrl(media.url);
+        const blob = media.type === 'image'
+          ? await renderEditedImage(media.url)
+          : await getBlobFromUrl(media.url);
         console.log('Blob created:', blob.type, blob.size);
         
         // Zipplign Core Feature: Validate video duration before upload
