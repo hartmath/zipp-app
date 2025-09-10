@@ -1,28 +1,18 @@
 "use client"
 
-import * as React from "react"
-import * as SliderPrimitive from "@radix-ui/react-slider"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
-
-const Slider = React.forwardRef<
-  React.ElementRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative flex w-full touch-none select-none items-center",
-      className
-    )}
-    {...props}
-  >
-    <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
-      <SliderPrimitive.Range className="absolute h-full bg-primary" />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
-  </SliderPrimitive.Root>
-))
-Slider.displayName = SliderPrimitive.Root.displayName
-
-export { Slider }
+export function Slider({ value, min = 0, max = 100, step = 1, onValueChange }: { value: number[]; min?: number; max?: number; step?: number; onValueChange: (val: number[]) => void }) {
+  const v = Math.min(max, Math.max(min, value?.[0] ?? min));
+  return (
+    <input
+      type="range"
+      value={v}
+      min={min}
+      max={max}
+      step={step}
+      onChange={(e) => onValueChange([Number(e.target.value)])}
+      className="w-full accent-teal-600"
+    />
+  );
+}

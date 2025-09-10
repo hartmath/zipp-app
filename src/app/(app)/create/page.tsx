@@ -512,7 +512,7 @@ export default function CreatePage() {
             <Button
               size="sm"
               className="rounded-full bg-white/90 text-black px-3 py-1 h-auto text-xs"
-              onClick={() => router.push('/create/post')}
+              onClick={() => router.push('/create/edit')}
             >
               Next
             </Button>
