@@ -209,31 +209,73 @@ export default function EditPage() {
   }, [selectedOverlayId, overlays]);
 
   const onLoadedMetadata = useCallback(() => {
-    if (videoRef.current) {
-      const d = Math.max(0, Math.floor(videoRef.current.duration || 0));
-      setDuration(d);
-      setTrimStart(0);
-      setTrimEnd(d);
+    if (videoRef.current && mediaKind === 'video') {
+      const videoDuration = Math.max(0, Math.floor(videoRef.current.duration || 0));
       videoRef.current.playbackRate = playbackRate;
+      
+      // Update the current clip's actual duration
+      const currentClip = clips.find(clip => clip.url === mediaUrl);
+      if (currentClip && videoDuration > 0) {
+        setClips(prevClips => prevClips.map(clip => 
+          clip.id === currentClip.id 
+            ? { ...clip, duration: videoDuration, end: clip.start + videoDuration }
+            : clip
+        ));
+        
+        // Recalculate total duration
+        const updatedClips = clips.map(clip => 
+          clip.id === currentClip.id 
+            ? { ...clip, duration: videoDuration, end: clip.start + videoDuration }
+            : clip
+        );
+        const totalDuration = updatedClips.reduce((max, clip) => Math.max(max, clip.end), 0);
+        setDuration(totalDuration);
+        setTrimEnd(totalDuration);
+      }
     }
-  }, [playbackRate]);
+  }, [playbackRate, clips, mediaUrl, mediaKind]);
 
   // Loop within trim and keep playhead synced
   useEffect(() => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || mediaKind !== 'video') return;
+    
     const onTime = () => {
-      const t = v.currentTime;
-      setPlayhead(t);
-      if ((trimEnd || duration) && t >= (trimEnd || duration)) {
-        v.currentTime = trimStart;
-        if (audioRef.current) audioRef.current.currentTime = trimStart;
-        if (!isPlaying) v.pause();
+      const currentClip = clips.find(clip => clip.url === mediaUrl);
+      if (currentClip) {
+        const relativeTime = v.currentTime;
+        const globalTime = currentClip.start + relativeTime;
+        setPlayhead(globalTime);
+        
+        // Check if we've reached the end of the current clip
+        if (relativeTime >= currentClip.duration) {
+          const nextClip = clips.find(clip => clip.start > currentClip.end);
+          if (nextClip) {
+            // Switch to next clip
+            setMediaUrl(nextClip.url);
+            setMediaKind(nextClip.kind);
+            if (nextClip.kind === 'video') {
+              v.currentTime = 0;
+            }
+          } else {
+            // Loop back to start
+            const firstClip = clips[0];
+            if (firstClip) {
+              setMediaUrl(firstClip.url);
+              setMediaKind(firstClip.kind);
+              setPlayhead(firstClip.start);
+              if (firstClip.kind === 'video') {
+                v.currentTime = 0;
+              }
+            }
+          }
+        }
       }
     };
+    
     v.addEventListener('timeupdate', onTime);
     return () => v.removeEventListener('timeupdate', onTime);
-  }, [trimStart, trimEnd, duration, isPlaying]);
+  }, [clips, mediaUrl, mediaKind, isPlaying]);
 
   const applyTrimAndFilters = useCallback(async () => {
     if (!mediaUrl) return;
@@ -462,6 +504,8 @@ export default function EditPage() {
                   className="h-full w-full object-cover"
                   onLoadedMetadata={onLoadedMetadata}
                   style={{ transform: mediaTransform, filter: mediaFilter } as any}
+                  muted
+                  playsInline
                 />
               )}
             </div>
@@ -606,7 +650,25 @@ export default function EditPage() {
                   const key = await saveBlob(file.type.startsWith('video/') ? 'video' : 'image', file);
                   const rec = await loadBlobUrl(key);
                   if (rec?.url) {
-                    const clipDuration = file.type.startsWith('image/') ? DEFAULT_DURATION : DEFAULT_DURATION;
+                    let clipDuration = DEFAULT_DURATION;
+                    
+                    // For videos, try to get actual duration
+                    if (file.type.startsWith('video/')) {
+                      try {
+                        const tempVideo = document.createElement('video');
+                        await new Promise((resolve, reject) => {
+                          tempVideo.onloadedmetadata = () => {
+                            clipDuration = Math.max(1, Math.floor(tempVideo.duration || DEFAULT_DURATION));
+                            resolve(null);
+                          };
+                          tempVideo.onerror = reject;
+                          tempVideo.src = rec.url;
+                        });
+                      } catch {
+                        clipDuration = DEFAULT_DURATION;
+                      }
+                    }
+                    
                     newClips.push({
                       id: key,
                       url: rec.url,
