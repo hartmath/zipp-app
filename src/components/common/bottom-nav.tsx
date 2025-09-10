@@ -69,7 +69,7 @@ export function BottomNav() {
   }
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-green-600 to-teal-600/90 backdrop-blur-sm">
+    <footer className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-green-600 to-teal-600/90 backdrop-blur-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <nav className="flex h-16 items-center justify-around px-1">
         {navItems.map((item) => {
           let href = item.href;

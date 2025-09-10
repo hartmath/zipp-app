@@ -529,7 +529,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
     if (navigator.share) {
       try {
         const permalink = typeof window !== 'undefined' 
-          ? `${window.location.origin}/post/${id}`
+          ? `${window.location.origin}/post/${id}?utm_source=share&utm_medium=app`
           : `/post/${id}`;
         await navigator.share({
           title: `Check out this Zippclip by ${user?.full_name || 'Unknown'}`,
@@ -544,7 +544,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
       // Fallback to copying URL
       try {
         const permalink = typeof window !== 'undefined' 
-          ? `${window.location.origin}/post/${id}`
+          ? `${window.location.origin}/post/${id}?utm_source=share&utm_medium=app`
           : `/post/${id}`;
         await navigator.clipboard.writeText(permalink);
         toast({
@@ -663,8 +663,8 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         </div>
       )}
 
-      {/* Main Overlay - Bottom */}
-      <div className="absolute bottom-[2rem] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-[2rem] md:bottom-[2rem]">
+      {/* Main Overlay - Bottom (respect bottom nav + safe area) */}
+      <div className="absolute bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 flex items-end justify-between p-4 pb-0 text-white z-10 sm:bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-[calc(4rem+env(safe-area-inset-bottom))]">
       {/* Left Side - User Info and Content */}
       <div className="flex-1 max-w-[75%] space-y-3">
         <div className="flex items-center gap-3">
@@ -893,6 +893,11 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
           )}
         </div>
       </div>
+      </div>
+
+      {/* Persistent in-video watermark (visible on shared link playback) */}
+      <div className="pointer-events-none select-none absolute bottom-[calc(3.5rem+env(safe-area-inset-bottom))] right-3 z-10 opacity-80">
+        <Image src="/Images/logo.png" alt="Zipplign" width={24} height={24} className="rounded-md" />
       </div>
 
       {/* Comments Modal */}

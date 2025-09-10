@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CartItem, getCart, updateQuantity, removeFromCart, getCartTotal, clearCart } from '@/lib/cart';
+import { loadStripe } from '@stripe/stripe-js';
 import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
@@ -16,6 +17,33 @@ export default function CartPage() {
   }, []);
 
   const total = getCartTotal(items);
+  const [checkingOut, setCheckingOut] = React.useState(false);
+
+  const checkout = async () => {
+    try {
+      setCheckingOut(true);
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity }))
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checkout failed');
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (stripe) {
+        // Fallback if we later switch to session id
+        window.location.href = data.url;
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Checkout failed');
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -55,7 +83,10 @@ export default function CartPage() {
           <div className="text-lg">Total: <span className="text-teal-400 font-bold">${total.toFixed(2)}</span></div>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="border-gray-700 text-white" onClick={() => { clearCart(); setItems([]); }}>Clear</Button>
-            <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => router.push('/store')}>Continue Shopping</Button>
+            <Button className="bg-teal-600 hover:bg-teal-700" onClick={checkout} disabled={checkingOut}>
+              {checkingOut ? 'Processing…' : 'Checkout'}
+            </Button>
+            <Button variant="outline" className="border-gray-700 text-white" onClick={() => router.push('/store')}>Continue Shopping</Button>
           </div>
         </div>
       </div>
