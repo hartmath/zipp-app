@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 
 const avatars = [
     { image: '/Images/F1.jpg', top: '15%', left: '10%', size: '30px' },
-    { image: '/Images/F2.jpg', top: '25%', left: '80%', size: '40px' },
+    { image: '/Images/f2.jpg', top: '25%', left: '80%', size: '40px' },
     { image: '/Images/F3.jpg', top: '40%', left: '5%', size: '25px' },
     { image: '/Images/F4.jpg', top: '55%', left: '90%', size: '35px' },
     { image: '/Images/F5.jpg', top: '70%', left: '15%', size: '30px' },
