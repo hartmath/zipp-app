@@ -396,7 +396,7 @@ export default function ZippersPage() {
         `)
         .in('user_id', followingIds)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(8);
 
       if (error) {
         console.error('Error fetching zippclips:', error);

@@ -108,7 +108,7 @@ export default function ProfilePage() {
       } else {
         setZippclips([]);
       }
-      const totalViews = (clipList || []).reduce((sum: number, c: any) => sum + (c.views || 0), 0);
+      const totalViews = (clipList || []).reduce((sum: number, c: any) => sum + (Number(c.views) || 0), 0);
 
       // Fetch liked clips (videos I liked)
       const { data: likesData, error: likedErr } = await supabase

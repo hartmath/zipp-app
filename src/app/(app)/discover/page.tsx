@@ -94,7 +94,7 @@ export default function DiscoverPage() {
           )
         `)
         .order('likes', { ascending: false })
-        .limit(20);
+        .limit(8);
 
       if (error) throw error;
       const formattedClips: Zippclip[] = (data || []).map((clip: any) => ({

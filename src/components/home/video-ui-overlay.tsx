@@ -15,8 +15,9 @@ import { blockUser, checkIfBlocked } from '@/lib/moderation';
 import { incrementZippclipViews, getZippclipViews, formatViewCount } from '@/lib/view-tracking';
 import { toggleSave, checkIsSaved, getSaveCount } from '@/lib/save-actions';
 import { getZipperCount, getZippers, getOriginalVideo } from '@/lib/zipper-actions';
-import { CommentsModal } from './comments-modal';
-import { ReportModal } from '../moderation/report-modal';
+import dynamic from 'next/dynamic';
+const CommentsModal = dynamic(() => import('./comments-modal').then(m => m.CommentsModal), { ssr: false });
+const ReportModal = dynamic(() => import('../moderation/report-modal').then(m => m.ReportModal), { ssr: false });
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -790,7 +791,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full hover:bg-transparent focus-visible:ring-0 focus-visible:outline-none" 
           onPointerDown={onLikeClick}
           disabled={isLiking}
           aria-label={isLiked ? 'Unlike' : 'Like'}
@@ -803,7 +804,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full hover:bg-transparent focus-visible:ring-0 focus-visible:outline-none" 
           onPointerDown={onCommentClick}
           aria-label="Comment"
         >
@@ -814,7 +815,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full hover:bg-transparent focus-visible:ring-0 focus-visible:outline-none" 
           onPointerDown={onSaveClick}
           disabled={isSaving}
           aria-label={isSaved ? 'Unsave' : 'Save'}
@@ -828,7 +829,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full"
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full hover:bg-transparent focus-visible:ring-0 focus-visible:outline-none"
           onPointerDown={onRideClick}
           aria-label="Ride this Zipp"
         >
@@ -841,7 +842,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full" 
+          className="h-auto w-auto flex-col gap-1 p-1 text-white rounded-full hover:bg-transparent focus-visible:ring-0 focus-visible:outline-none" 
           onPointerDown={onShareClick}
           aria-label="Share"
         >
@@ -856,7 +857,7 @@ export const VideoUIOverlay = React.memo(function VideoUIOverlay({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-auto w-auto flex-col gap-1 p-1 text-white hover:bg-white/10 rounded-full"
+              className="h-auto w-auto flex-col gap-1 p-1 text-white md:hover:bg-white/10 rounded-full hover:bg-transparent focus-visible:ring-0 focus-visible:outline-none"
             >
               <MoreHorizontal className="h-7 w-7 fill-white" />
             </Button>

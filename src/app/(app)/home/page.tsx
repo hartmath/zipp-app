@@ -411,7 +411,7 @@ export default function HomePage() {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(8);
 
       if (error) throw error;
 
