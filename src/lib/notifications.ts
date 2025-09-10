@@ -48,8 +48,8 @@ export class NotificationService {
 
     try {
       const notification = new Notification(title, {
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
+        icon: '/Images/icon.jpg?v=3',
+        badge: '/Images/icon.jpg?v=3',
         ...options
       });
 

@@ -1,6 +1,6 @@
-# Firebase Studio - Zippclip
+# Zipplign
 
-This is a Next.js video-sharing app, similar to TikTok, created in Firebase Studio.
+Zipplign is a Next.js social video app. Backend is powered by Supabase (auth, database, storage). Payments via Stripe. Branding and assets belong to Zipplign.
 
 ## Getting Started
 
