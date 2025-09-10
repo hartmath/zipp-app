@@ -61,7 +61,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   className="bg-teal-600 hover:bg-teal-700"
                   onClick={() => {
                     addToCart({ id: product.id, name: product.name, price: product.price, image_url: product.image_url }, 1);
-                    router.push('/store/cart');
                   }}
                 >
                   Add to Cart

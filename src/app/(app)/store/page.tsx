@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
+import { getCartCount, subscribeToCart, addToCart } from '@/lib/cart';
 
 const navItems = [
     { href: '/events', label: 'Events' },
@@ -26,9 +27,12 @@ const navItems = [
 function ShopHeader() {
   const pathname = usePathname();
   const [hasStore, setHasStore] = React.useState(false);
+  const [cartCount, setCartCount] = React.useState<number>(0);
 
   React.useEffect(() => {
     let isMounted = true;
+    setCartCount(getCartCount());
+    const unsub = subscribeToCart((count) => setCartCount(count));
     const checkStore = async () => {
       try {
         if (!supabase) return;
@@ -50,6 +54,7 @@ function ShopHeader() {
     checkStore();
     return () => {
       isMounted = false;
+      unsub();
     };
   }, []);
 
@@ -80,10 +85,15 @@ function ShopHeader() {
             </Link>
           </Button>
         )}
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-white/80 hover:bg-transparent hover:text-white" asChild>
-          <Link href="/notifications">
+        <Button variant="ghost" size="sm" className="relative h-7 w-7 p-0 text-white/80 hover:bg-transparent hover:text-white" asChild>
+          <Link href="/store/cart">
             <ShoppingCart className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
+            <span className="sr-only">Cart</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-teal-600 text-white text-[10px] rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </Link>
         </Button>
       </div>
@@ -221,11 +231,16 @@ export default function ShopPage() {
                           <div className="p-4">
                             <h4 className="font-semibold text-white mb-1 truncate">{p.name}</h4>
                             <p className="text-gray-400 text-sm line-clamp-2 mb-2">{p.description}</p>
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-2">
                               <span className="text-teal-400 font-bold">${p.price}</span>
-                              <Button size="sm" variant="outline" className="border-gray-700 text-white hover:bg-gray-800" asChild>
-                                <Link href={`/store/product/${p.id}`} prefetch={false}>View</Link>
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => addToCart({ id: p.id, name: p.name, price: p.price, image_url: p.image_url }, 1)}>
+                                  Add to Cart
+                                </Button>
+                                <Button size="sm" variant="outline" className="border-gray-700 text-white hover:bg-gray-800" asChild>
+                                  <Link href={`/store/product/${p.id}`} prefetch={false}>View</Link>
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
