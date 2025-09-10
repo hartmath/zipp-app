@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +27,7 @@ type SimpleTrack = {
   preview_url: string | null;
   image_url: string;
   spotify_url: string;
+  category?: string;
 };
 
 const MUSIC_CATEGORIES = [
@@ -84,6 +86,8 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const [oscillator, setOscillator] = useState<OscillatorNode | null>(null);
   const [gainNode, setGainNode] = useState<GainNode | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('trending');
 
   useEffect(() => {
     // Load local tracks from API
@@ -177,6 +181,37 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
     }
   };
 
+  const handleUpload = async (file: File) => {
+    try {
+      if (!file.type.startsWith('audio/')) return;
+      setUploading(true);
+      const ext = file.name.split('.').pop() || 'mp3';
+      const key = `music/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase?.storage.from('zippclips').upload(key, file, { upsert: true, cacheControl: '3600' }) || { error: null };
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('zippclips').getPublicUrl(key);
+      const track: SimpleTrack = {
+        id: key,
+        name: file.name.replace(/\.[^.]+$/, ''),
+        artist: 'Uploaded',
+        album: 'User',
+        duration: '—',
+        preview_url: publicUrl,
+        image_url: '/Images/logo.png',
+        spotify_url: '#',
+        category: selectedCategory,
+      };
+      const updated = [track, ...localTracks];
+      setLocalTracks(updated);
+      setSearchResults(updated);
+      onTrackSelect?.(track);
+    } catch (e) {
+      console.error('Music upload failed:', e);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Search */}
@@ -222,6 +257,34 @@ export function SimpleMusicBrowser({ onTrackSelect, selectedTrack }: SimpleMusic
             ))}
           </div>
         </TabsContent>
+
+        {/* Upload controls */}
+        <div className="flex items-center gap-2 mb-2">
+          <label className="text-xs text-gray-400">Category</label>
+          <select
+            className="bg-gray-800 text-white text-xs rounded px-2 py-1 border border-gray-700"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            {MUSIC_CATEGORIES.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <label className="ml-auto text-xs bg-teal-600 hover:bg-teal-700 px-2 py-1 rounded cursor-pointer">
+            {uploading ? 'Uploading…' : 'Upload audio'}
+            <input
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleUpload(f);
+                e.currentTarget.value = '';
+              }}
+              disabled={uploading}
+            />
+          </label>
+        </div>
 
         {/* Search Results */}
         <TabsContent value="search" className="space-y-4">

@@ -81,6 +81,63 @@ export default function CreatorStoreManagePage() {
     image_url: ''
   });
 
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
+  const [uploadingServiceImage, setUploadingServiceImage] = useState(false);
+
+  const handleProductImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !store) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 5MB image', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploadingProductImage(true);
+      const ext = file.name.split('.').pop();
+      const key = `stores/${store.id}/products/${Date.now()}.${ext}`;
+      const { error } = await supabase!.storage.from('zippclips').upload(key, file, { upsert: true, cacheControl: '3600' });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase!.storage.from('zippclips').getPublicUrl(key);
+      setProductForm(prev => ({ ...prev, image_url: publicUrl }));
+      toast({ title: 'Image uploaded', description: 'Product image set' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message || 'Could not upload image', variant: 'destructive' });
+    } finally {
+      setUploadingProductImage(false);
+    }
+  };
+
+  const handleServiceImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !store) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please select an image file', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 5MB image', variant: 'destructive' });
+      return;
+    }
+    try {
+      setUploadingServiceImage(true);
+      const ext = file.name.split('.').pop();
+      const key = `stores/${store.id}/services/${Date.now()}.${ext}`;
+      const { error } = await supabase!.storage.from('zippclips').upload(key, file, { upsert: true, cacheControl: '3600' });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase!.storage.from('zippclips').getPublicUrl(key);
+      setServiceForm(prev => ({ ...prev, image_url: publicUrl }));
+      toast({ title: 'Image uploaded', description: 'Service image set' });
+    } catch (e: any) {
+      toast({ title: 'Upload failed', description: e?.message || 'Could not upload image', variant: 'destructive' });
+    } finally {
+      setUploadingServiceImage(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -335,7 +392,7 @@ export default function CreatorStoreManagePage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="h-full overflow-y-auto bg-black text-white pb-[calc(4rem+env(safe-area-inset-bottom))]">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-black/90 backdrop-blur-sm border-b border-gray-800">
         <div className="flex items-center justify-between p-4">
@@ -365,6 +422,14 @@ export default function CreatorStoreManagePage() {
             >
               <Settings className="h-4 w-4 mr-2" />
               Settings
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/creator-store/manage/analytics')}
+              className="border-gray-700 text-white hover:bg-gray-800"
+            >
+              Analytics
             </Button>
           </div>
         </div>
@@ -518,14 +583,18 @@ export default function CreatorStoreManagePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="product_image" className="text-white">Image URL</Label>
+                      <Label htmlFor="product_image" className="text-white">Product Image</Label>
                       <Input
                         id="product_image"
-                        value={productForm.image_url}
-                        onChange={(e) => setProductForm(prev => ({ ...prev, image_url: e.target.value }))}
-                        placeholder="https://example.com/image.jpg"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProductImageChange}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
+                      {uploadingProductImage && <p className="text-xs text-gray-400">Uploading...</p>}
+                      {productForm.image_url && (
+                        <p className="text-xs text-gray-400 truncate">Selected: {productForm.image_url}</p>
+                      )}
                     </div>
 
                     <div className="flex gap-2">
@@ -723,14 +792,18 @@ export default function CreatorStoreManagePage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="service_image" className="text-white">Image URL</Label>
+                      <Label htmlFor="service_image" className="text-white">Service Image</Label>
                       <Input
                         id="service_image"
-                        value={serviceForm.image_url}
-                        onChange={(e) => setServiceForm(prev => ({ ...prev, image_url: e.target.value }))}
-                        placeholder="https://example.com/image.jpg"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleServiceImageChange}
                         className="bg-gray-800 border-gray-700 text-white"
                       />
+                      {uploadingServiceImage && <p className="text-xs text-gray-400">Uploading...</p>}
+                      {serviceForm.image_url && (
+                        <p className="text-xs text-gray-400 truncate">Selected: {serviceForm.image_url}</p>
+                      )}
                     </div>
 
                     <div className="flex gap-2">

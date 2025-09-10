@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const items: Array<{ id: string; name: string; price: number; quantity: number }> = body.items || [];
+    const items: Array<{ id: string; name: string; price: number; quantity: number; storeId?: string }> = body.items || [];
+    const storeId: string | undefined = body.storeId || items[0]?.storeId;
+    const userId: string | undefined = body.userId;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'No items' }, { status: 400 });
@@ -34,6 +36,10 @@ export async function POST(req: NextRequest) {
       line_items,
       success_url: `${origin}/store/cart?status=success`,
       cancel_url: `${origin}/store/cart?status=cancel`,
+      metadata: {
+        ...(storeId ? { store_id: storeId } : {}),
+        ...(userId ? { user_id: userId } : {}),
+      }
     });
 
     return NextResponse.json({ url: session.url });

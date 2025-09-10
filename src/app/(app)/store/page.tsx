@@ -174,7 +174,7 @@ export default function ShopPage() {
   const displayProducts = searchQuery ? productResults : products;
 
   return (
-    <div className="h-screen bg-black text-white overflow-hidden">
+    <div className="h-full bg-black text-white overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))]">
       <ShopHeader />
       
       <div className="h-full pt-16 flex flex-col">

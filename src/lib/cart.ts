@@ -4,6 +4,7 @@ export interface CartItem {
   price: number;
   image_url?: string;
   quantity: number;
+  storeId?: string;
 }
 
 const CART_KEY = 'zipp_cart_v1';
