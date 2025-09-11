@@ -159,8 +159,16 @@ export function Timeline({
     return () => window.removeEventListener('timelineUpdated', handleTimelineUpdate)
   }, [])
 
+  const handleElementDelete = useCallback((elementId: string) => {
+    const updatedElements = timelineElements.filter(el => el.id !== elementId)
+    setTimelineElements(updatedElements)
+    sessionStorage.setItem('timelineElements', JSON.stringify(updatedElements))
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
+  }, [timelineElements])
+
   const [zoom, setZoom] = useState(1)
   const [snapping, setSnapping] = useState(true)
+  const [draggedElement, setDraggedElement] = useState<string | null>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
 
   const formatTime = (seconds: number) => {
@@ -301,6 +309,36 @@ export function Timeline({
               ref={timelineRef}
               className="relative h-full cursor-pointer"
               onClick={handleTimelineClick}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                const elementId = e.dataTransfer.getData('text/plain')
+                if (elementId && timelineRef.current) {
+                  const rect = timelineRef.current.getBoundingClientRect()
+                  const x = e.clientX - rect.left
+                  const newStart = (x / rect.width) * duration
+                  
+                  // Update element position
+                  const updatedElements = timelineElements.map(el => {
+                    if (el.id === elementId) {
+                      const duration = el.end - el.start
+                      return {
+                        ...el,
+                        start: Math.max(0, newStart),
+                        end: Math.max(0, newStart + duration)
+                      }
+                    }
+                    return el
+                  })
+                  
+                  setTimelineElements(updatedElements)
+                  sessionStorage.setItem('timelineElements', JSON.stringify(updatedElements))
+                  window.dispatchEvent(new CustomEvent('timelineUpdated'))
+                }
+              }}
               style={{ minWidth: `${duration * pixelsPerSecond}px` }}
             >
               {/* Playhead */}
@@ -321,16 +359,108 @@ export function Timeline({
                   {track.elements.map((element) => (
                     <div
                       key={element.id}
-                      className="absolute top-1 bottom-1 rounded border-2 border-white/20 cursor-pointer hover:border-white/40 transition-colors"
+                      className="absolute top-1 bottom-1 rounded border-2 border-white/20 cursor-move hover:border-white/40 transition-colors group"
                       style={{
                         left: `${(element.start / duration) * 100}%`,
                         width: `${((element.end - element.start) / duration) * 100}%`,
                         backgroundColor: element.color,
                       }}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedElement(element.id)
+                        e.dataTransfer.setData('text/plain', element.id)
+                      }}
+                      onDragEnd={() => {
+                        setDraggedElement(null)
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        // Select element
+                        if (typeof window !== 'undefined') {
+                          window.dispatchEvent(new CustomEvent('elementSelected', { detail: element }))
+                        }
+                      }}
                     >
-                      <div className="p-1 text-xs text-white truncate">
+                      <div className="p-1 text-xs text-white truncate relative">
                         {element.name}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute -top-1 -right-1 h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleElementDelete(element.id)
+                          }}
+                        >
+                          <Trash2 className="h-2 w-2" />
+                        </Button>
                       </div>
+                      
+                      {/* Resize handles */}
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity bg-white/50"
+                        onMouseDown={(e) => {
+                          e.stopPropagation()
+                          const startX = e.clientX
+                          const startTime = element.start
+                          
+                          const handleMouseMove = (e: MouseEvent) => {
+                            const deltaX = e.clientX - startX
+                            const deltaTime = (deltaX / (timelineRef.current?.getBoundingClientRect().width || 1)) * duration
+                            const newStart = Math.max(0, Math.min(startTime + deltaTime, element.end - 0.1))
+                            
+                            const updatedElements = timelineElements.map(el => {
+                              if (el.id === element.id) {
+                                return { ...el, start: newStart }
+                              }
+                              return el
+                            })
+                            setTimelineElements(updatedElements)
+                          }
+                          
+                          const handleMouseUp = () => {
+                            document.removeEventListener('mousemove', handleMouseMove)
+                            document.removeEventListener('mouseup', handleMouseUp)
+                            sessionStorage.setItem('timelineElements', JSON.stringify(timelineElements))
+                            window.dispatchEvent(new CustomEvent('timelineUpdated'))
+                          }
+                          
+                          document.addEventListener('mousemove', handleMouseMove)
+                          document.addEventListener('mouseup', handleMouseUp)
+                        }}
+                      />
+                      <div
+                        className="absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity bg-white/50"
+                        onMouseDown={(e) => {
+                          e.stopPropagation()
+                          const startX = e.clientX
+                          const startTime = element.end
+                          
+                          const handleMouseMove = (e: MouseEvent) => {
+                            const deltaX = e.clientX - startX
+                            const deltaTime = (deltaX / (timelineRef.current?.getBoundingClientRect().width || 1)) * duration
+                            const newEnd = Math.max(element.start + 0.1, Math.min(startTime + deltaTime, duration))
+                            
+                            const updatedElements = timelineElements.map(el => {
+                              if (el.id === element.id) {
+                                return { ...el, end: newEnd }
+                              }
+                              return el
+                            })
+                            setTimelineElements(updatedElements)
+                          }
+                          
+                          const handleMouseUp = () => {
+                            document.removeEventListener('mousemove', handleMouseMove)
+                            document.removeEventListener('mouseup', handleMouseUp)
+                            sessionStorage.setItem('timelineElements', JSON.stringify(timelineElements))
+                            window.dispatchEvent(new CustomEvent('timelineUpdated'))
+                          }
+                          
+                          document.addEventListener('mousemove', handleMouseMove)
+                          document.addEventListener('mouseup', handleMouseUp)
+                        }}
+                      />
                     </div>
                   ))}
                 </div>

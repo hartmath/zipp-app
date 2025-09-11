@@ -140,18 +140,28 @@ export function PreviewPanel({
             <div
               key={element.id}
               className={cn(
-                "absolute pointer-events-none",
+                "absolute pointer-events-auto cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all",
                 selectedElement?.id === element.id && "ring-2 ring-blue-500"
               )}
               style={{
                 opacity: (element.properties?.opacity || 100) / 100,
                 transform: `rotate(${element.properties?.rotation || 0}deg) scale(${(element.properties?.scale || 100) / 100})`,
                 color: element.properties?.color || '#ffffff',
-                fontSize: `${element.properties?.fontSize || 16}px`
+                fontSize: `${element.properties?.fontSize || 16}px`,
+                left: element.properties?.x || '50%',
+                top: element.properties?.y || '50%',
+                transformOrigin: 'center'
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                // This will be handled by the parent component
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('elementSelected', { detail: element }))
+                }
               }}
             >
               {element.type === 'text' && (
-                <div className="text-center">
+                <div className="text-center select-none">
                   {element.text || element.name}
                 </div>
               )}

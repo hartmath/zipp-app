@@ -71,8 +71,47 @@ export default function CapCutEditor() {
       loadTimelineElements()
     }
     
+    // Listen for element selection
+    const handleElementSelected = (event: any) => {
+      setSelectedElement(event.detail)
+    }
+    
+    // Add keyboard shortcuts
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' && selectedElement) {
+        // Delete selected element
+        const updatedElements = timelineElements.filter(el => el.id !== selectedElement.id)
+        setTimelineElements(updatedElements)
+        sessionStorage.setItem('timelineElements', JSON.stringify(updatedElements))
+        setSelectedElement(null)
+        window.dispatchEvent(new CustomEvent('timelineUpdated'))
+      } else if (event.key === ' ' && !event.repeat) {
+        // Spacebar to play/pause
+        event.preventDefault()
+        if (isPlaying) {
+          handlePause()
+        } else {
+          handlePlay()
+        }
+      } else if (event.key === 'ArrowLeft' && event.ctrlKey) {
+        // Ctrl+Left to seek backward
+        event.preventDefault()
+        setCurrentTime(Math.max(0, currentTime - 1))
+      } else if (event.key === 'ArrowRight' && event.ctrlKey) {
+        // Ctrl+Right to seek forward
+        event.preventDefault()
+        setCurrentTime(Math.min(duration, currentTime + 1))
+      }
+    }
+    
     window.addEventListener('timelineUpdated', handleTimelineUpdate)
-    return () => window.removeEventListener('timelineUpdated', handleTimelineUpdate)
+    window.addEventListener('elementSelected', handleElementSelected)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('timelineUpdated', handleTimelineUpdate)
+      window.removeEventListener('elementSelected', handleElementSelected)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [])
 
   const handlePlay = () => {
