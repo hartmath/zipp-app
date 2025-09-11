@@ -20,8 +20,10 @@ import { cn } from "@/lib/utils"
 import { CaptionsPanel } from "./captions-panel"
 import { BackgroundRemovalPanel } from "./background-removal-panel"
 import { ProjectManagementPanel } from "./project-management-panel"
+import { AudioEffectsPanel } from "./audio-effects-panel"
+import { KeyframePanel } from "./keyframe-panel"
 
-type Tab = 'media' | 'sounds' | 'text' | 'stickers' | 'effects' | 'filters' | 'adjustment' | 'settings' | 'captions' | 'background' | 'projects'
+type Tab = 'media' | 'sounds' | 'text' | 'stickers' | 'effects' | 'filters' | 'adjustment' | 'settings' | 'captions' | 'background' | 'projects' | 'audio-effects' | 'keyframes'
 
 interface MediaPanelProps {
   onMediaSelect?: (media: any) => void
@@ -30,9 +32,11 @@ interface MediaPanelProps {
   onCaptionsUpdate?: (captions: any[]) => void
   onProjectLoad?: (project: any) => void
   onProjectSave?: () => any
+  onPropertyChange?: (property: string, value: number) => void
   currentTime?: number
   timelineElements?: any[]
   currentProject?: any
+  selectedElement?: any
 }
 
 export function MediaPanel({ 
@@ -42,9 +46,11 @@ export function MediaPanel({
   onCaptionsUpdate,
   onProjectLoad,
   onProjectSave,
+  onPropertyChange,
   currentTime,
   timelineElements,
-  currentProject
+  currentProject,
+  selectedElement
 }: MediaPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('media')
 
@@ -58,6 +64,8 @@ export function MediaPanel({
     { id: 'adjustment' as Tab, label: 'Adjust', icon: Sliders },
     { id: 'captions' as Tab, label: 'Captions', icon: Type },
     { id: 'background' as Tab, label: 'AI Tools', icon: Wand2 },
+    { id: 'audio-effects' as Tab, label: 'Audio FX', icon: Music },
+    { id: 'keyframes' as Tab, label: 'Keyframes', icon: Settings },
     { id: 'projects' as Tab, label: 'Projects', icon: FolderOpen },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ]
@@ -110,6 +118,39 @@ export function MediaPanel({
               sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
               window.dispatchEvent(new CustomEvent('timelineUpdated'))
             }}
+          />
+        )
+      case 'audio-effects':
+        return (
+          <AudioEffectsPanel 
+            onAudioProcessed={(blob) => {
+              // Add processed audio to timeline
+              const newElement = {
+                id: Math.random().toString(36).slice(2),
+                type: 'audio',
+                name: 'Processed Audio',
+                url: URL.createObjectURL(blob),
+                start: 0,
+                end: 10,
+                properties: {
+                  volume: 1,
+                  muted: false
+                }
+              }
+              
+              const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+              existingElements.push(newElement)
+              sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+              window.dispatchEvent(new CustomEvent('timelineUpdated'))
+            }}
+          />
+        )
+      case 'keyframes':
+        return (
+          <KeyframePanel 
+            selectedElement={selectedElement}
+            currentTime={currentTime}
+            onPropertyChange={onPropertyChange}
           />
         )
       case 'projects':

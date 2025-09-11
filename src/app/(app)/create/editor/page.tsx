@@ -519,9 +519,11 @@ export default function CapCutEditor() {
               onCaptionsUpdate={handleCaptionsUpdate}
               onProjectLoad={handleProjectLoad}
               onProjectSave={handleProjectSave}
+              onPropertyChange={handlePropertyChange}
               currentTime={currentTime}
               timelineElements={timelineElements}
               currentProject={currentProject}
+              selectedElement={selectedElement}
             />
           </div>
 
