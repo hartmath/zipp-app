@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
@@ -53,33 +53,111 @@ export function Timeline({
   onPause, 
   isPlaying = false 
 }: TimelineProps) {
-  const [tracks] = useState<TimelineTrack[]>([
-    {
-      id: 'video-1',
-      type: 'video',
-      name: 'Video Track 1',
-      elements: [
-        { id: 'video-1', start: 0, end: 10, name: 'Video Clip 1', color: '#3b82f6' },
-        { id: 'video-2', start: 15, end: 25, name: 'Video Clip 2', color: '#3b82f6' }
-      ]
-    },
-    {
-      id: 'audio-1',
-      type: 'audio',
-      name: 'Audio Track 1',
-      elements: [
-        { id: 'audio-1', start: 0, end: 30, name: 'Background Music', color: '#10b981' }
-      ]
-    },
-    {
-      id: 'text-1',
-      type: 'text',
-      name: 'Text Track 1',
-      elements: [
-        { id: 'text-1', start: 5, end: 15, name: 'Title Text', color: '#f59e0b' }
-      ]
+  const [tracks, setTracks] = useState<TimelineTrack[]>([])
+  const [timelineElements, setTimelineElements] = useState<any[]>([])
+
+  // Load timeline elements from session storage
+  useEffect(() => {
+    const loadTimelineElements = () => {
+      try {
+        const elements = sessionStorage.getItem('timelineElements')
+        if (elements) {
+          const parsedElements = JSON.parse(elements)
+          setTimelineElements(parsedElements)
+          
+          // Convert elements to tracks
+          const videoElements = parsedElements.filter((el: any) => el.type === 'video')
+          const audioElements = parsedElements.filter((el: any) => el.type === 'audio')
+          const textElements = parsedElements.filter((el: any) => el.type === 'text')
+          
+          const newTracks: TimelineTrack[] = []
+          
+          if (videoElements.length > 0) {
+            newTracks.push({
+              id: 'video-1',
+              type: 'video',
+              name: 'Video Track',
+              elements: videoElements.map((el: any) => ({
+                id: el.id,
+                start: el.start || 0,
+                end: el.end || 10,
+                name: el.name || 'Video Clip',
+                color: '#3b82f6'
+              }))
+            })
+          }
+          
+          if (audioElements.length > 0) {
+            newTracks.push({
+              id: 'audio-1',
+              type: 'audio',
+              name: 'Audio Track',
+              elements: audioElements.map((el: any) => ({
+                id: el.id,
+                start: el.start || 0,
+                end: el.end || 30,
+                name: el.name || 'Audio Clip',
+                color: '#10b981'
+              }))
+            })
+          }
+          
+          if (textElements.length > 0) {
+            newTracks.push({
+              id: 'text-1',
+              type: 'text',
+              name: 'Text Track',
+              elements: textElements.map((el: any) => ({
+                id: el.id,
+                start: el.start || 0,
+                end: el.end || 5,
+                name: el.name || 'Text',
+                color: '#f59e0b'
+              }))
+            })
+          }
+          
+          setTracks(newTracks)
+        }
+      } catch (error) {
+        console.error('Error loading timeline elements:', error)
+      }
     }
-  ])
+    loadTimelineElements()
+  }, [])
+
+  // Add new element to timeline
+  const addElementToTimeline = (element: any) => {
+    const newElement = {
+      id: element.id,
+      type: element.type,
+      name: element.name,
+      start: currentTime,
+      end: currentTime + (element.type === 'video' ? 10 : element.type === 'audio' ? 30 : 5),
+      properties: element.properties || {}
+    }
+    
+    const updatedElements = [...timelineElements, newElement]
+    setTimelineElements(updatedElements)
+    sessionStorage.setItem('timelineElements', JSON.stringify(updatedElements))
+    
+    // Refresh tracks
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
+  }
+
+  // Listen for new elements being added
+  useEffect(() => {
+    const handleTimelineUpdate = () => {
+      const elements = sessionStorage.getItem('timelineElements')
+      if (elements) {
+        const parsedElements = JSON.parse(elements)
+        setTimelineElements(parsedElements)
+      }
+    }
+    
+    window.addEventListener('timelineUpdated', handleTimelineUpdate)
+    return () => window.removeEventListener('timelineUpdated', handleTimelineUpdate)
+  }, [])
 
   const [zoom, setZoom] = useState(1)
   const [snapping, setSnapping] = useState(true)

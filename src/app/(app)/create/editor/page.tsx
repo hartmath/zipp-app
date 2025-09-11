@@ -25,6 +25,7 @@ export default function CapCutEditor() {
   const [volume, setVolume] = useState(1)
   const [muted, setMuted] = useState(false)
   const [selectedElement, setSelectedElement] = useState<any>(null)
+  const [timelineElements, setTimelineElements] = useState<any[]>([])
 
   // Panel sizes
   const [mediaPanelSize, setMediaPanelSize] = useState(20)
@@ -50,7 +51,28 @@ export default function CapCutEditor() {
       }
     }
 
+    // Load timeline elements
+    const loadTimelineElements = () => {
+      try {
+        const elements = sessionStorage.getItem('timelineElements')
+        if (elements) {
+          setTimelineElements(JSON.parse(elements))
+        }
+      } catch (error) {
+        console.error('Error loading timeline elements:', error)
+      }
+    }
+
     loadMedia()
+    loadTimelineElements()
+
+    // Listen for timeline updates
+    const handleTimelineUpdate = () => {
+      loadTimelineElements()
+    }
+    
+    window.addEventListener('timelineUpdated', handleTimelineUpdate)
+    return () => window.removeEventListener('timelineUpdated', handleTimelineUpdate)
   }, [])
 
   const handlePlay = () => {
@@ -76,10 +98,11 @@ export default function CapCutEditor() {
   const handleMediaSelect = (media: any) => {
     console.log('Media selected:', media)
     // Add media to timeline
-    setSelectedElement({
+    const newElement = {
       id: Math.random().toString(36).slice(2),
       type: media.type,
       name: media.name,
+      url: media.url,
       properties: {
         opacity: 100,
         volume: 100,
@@ -88,16 +111,34 @@ export default function CapCutEditor() {
         color: '#ffffff',
         fontSize: 16
       }
-    })
+    }
+    
+    setSelectedElement(newElement)
+    
+    // Add to timeline
+    const timelineElement = {
+      ...newElement,
+      start: currentTime,
+      end: currentTime + (media.type === 'video' ? 10 : 5)
+    }
+    
+    // Save to session storage
+    const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+    existingElements.push(timelineElement)
+    sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+    
+    // Trigger timeline update
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
   }
 
   const handleTextAdd = (text: string) => {
     console.log('Text added:', text)
     // Add text element to timeline
-    setSelectedElement({
+    const newElement = {
       id: Math.random().toString(36).slice(2),
       type: 'text',
       name: text,
+      text: text,
       properties: {
         opacity: 100,
         volume: 100,
@@ -106,16 +147,34 @@ export default function CapCutEditor() {
         color: '#ffffff',
         fontSize: 16
       }
-    })
+    }
+    
+    setSelectedElement(newElement)
+    
+    // Add to timeline
+    const timelineElement = {
+      ...newElement,
+      start: currentTime,
+      end: currentTime + 5
+    }
+    
+    // Save to session storage
+    const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+    existingElements.push(timelineElement)
+    sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+    
+    // Trigger timeline update
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
   }
 
   const handleSoundSelect = (sound: any) => {
     console.log('Sound selected:', sound)
     // Add audio to timeline
-    setSelectedElement({
+    const newElement = {
       id: Math.random().toString(36).slice(2),
       type: 'audio',
       name: sound.name,
+      url: sound.url,
       properties: {
         opacity: 100,
         volume: 100,
@@ -124,20 +183,49 @@ export default function CapCutEditor() {
         color: '#ffffff',
         fontSize: 16
       }
-    })
+    }
+    
+    setSelectedElement(newElement)
+    
+    // Add to timeline
+    const timelineElement = {
+      ...newElement,
+      start: currentTime,
+      end: currentTime + 30
+    }
+    
+    // Save to session storage
+    const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+    existingElements.push(timelineElement)
+    sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+    
+    // Trigger timeline update
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
   }
 
   const handlePropertyChange = (property: string, value: any) => {
     console.log('Property changed:', property, value)
     // Update selected element properties
     if (selectedElement) {
-      setSelectedElement({
+      const updatedElement = {
         ...selectedElement,
         properties: {
           ...selectedElement.properties,
           [property]: value
         }
-      })
+      }
+      
+      setSelectedElement(updatedElement)
+      
+      // Update in timeline elements
+      const updatedTimelineElements = timelineElements.map(el => 
+        el.id === selectedElement.id ? updatedElement : el
+      )
+      setTimelineElements(updatedTimelineElements)
+      sessionStorage.setItem('timelineElements', JSON.stringify(updatedTimelineElements))
+      
+      // Trigger timeline update
+      window.dispatchEvent(new CustomEvent('timelineUpdated'))
     }
   }
 
@@ -152,6 +240,7 @@ export default function CapCutEditor() {
         volume,
         muted,
         selectedElement,
+        timelineElements,
         timestamp: Date.now()
       }
       
@@ -260,6 +349,8 @@ export default function CapCutEditor() {
               muted={muted}
               onVolumeChange={handleVolumeChange}
               onMuteToggle={handleMuteToggle}
+              timelineElements={timelineElements}
+              selectedElement={selectedElement}
             />
           </div>
 

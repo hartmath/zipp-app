@@ -27,6 +27,8 @@ interface PreviewPanelProps {
   muted?: boolean
   onVolumeChange?: (volume: number) => void
   onMuteToggle?: () => void
+  timelineElements?: any[]
+  selectedElement?: any
 }
 
 export function PreviewPanel({
@@ -41,7 +43,9 @@ export function PreviewPanel({
   volume = 1,
   muted = false,
   onVolumeChange,
-  onMuteToggle
+  onMuteToggle,
+  timelineElements = [],
+  selectedElement
 }: PreviewPanelProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
@@ -126,6 +130,49 @@ export function PreviewPanel({
             <p className="text-sm">Upload or record media to get started</p>
           </div>
         )}
+        
+        {/* Timeline Elements Overlay */}
+        {timelineElements.map((element) => {
+          const isVisible = currentTime >= element.start && currentTime <= element.end
+          if (!isVisible) return null
+          
+          return (
+            <div
+              key={element.id}
+              className={cn(
+                "absolute pointer-events-none",
+                selectedElement?.id === element.id && "ring-2 ring-blue-500"
+              )}
+              style={{
+                opacity: (element.properties?.opacity || 100) / 100,
+                transform: `rotate(${element.properties?.rotation || 0}deg) scale(${(element.properties?.scale || 100) / 100})`,
+                color: element.properties?.color || '#ffffff',
+                fontSize: `${element.properties?.fontSize || 16}px`
+              }}
+            >
+              {element.type === 'text' && (
+                <div className="text-center">
+                  {element.text || element.name}
+                </div>
+              )}
+              {element.type === 'video' && element.url && (
+                <video
+                  src={element.url}
+                  className="max-w-xs max-h-xs object-contain"
+                  muted
+                  loop
+                />
+              )}
+              {element.type === 'image' && element.url && (
+                <img
+                  src={element.url}
+                  alt={element.name}
+                  className="max-w-xs max-h-xs object-contain"
+                />
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Controls Overlay */}
