@@ -475,6 +475,7 @@ export default function EditPage() {
   // Cleanup ticker on unmount
   useEffect(() => () => { if (tickerRef.current) clearInterval(tickerRef.current); }, []);
 
+  // Force rebuild for Vercel
   return (
     <div className="flex h-full w-full flex-col bg-black text-white">
       <header className="flex items-center justify-between p-3 border-b border-gray-800">
@@ -609,7 +610,7 @@ export default function EditPage() {
               <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => router.push('/create/music')}>Change Music</Button>
             </div>
           )}
-          {/* Timeline */
+          {/* Timeline */}
           <Timeline
             duration={duration || 0}
             playhead={playhead}

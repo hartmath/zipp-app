@@ -385,32 +385,68 @@ export default function CreatePage() {
   };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    
     try {
-      if (file.type.startsWith('image/')) {
-        const key = await saveBlob('image', file);
-        sessionStorage.setItem('mediaKey', key);
-        sessionStorage.setItem('mediaKind', 'image');
-      } else if (file.type.startsWith('video/')) {
-        const key = await saveBlob('video', file);
-        sessionStorage.setItem('mediaKey', key);
-        sessionStorage.setItem('mediaKind', 'video');
+      if (files.length === 1) {
+        // Single file - use existing logic
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          const key = await saveBlob('image', file);
+          sessionStorage.setItem('mediaKey', key);
+          sessionStorage.setItem('mediaKind', 'image');
+        } else if (file.type.startsWith('video/')) {
+          const key = await saveBlob('video', file);
+          sessionStorage.setItem('mediaKey', key);
+          sessionStorage.setItem('mediaKind', 'video');
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Unsupported File Type',
+            description: 'Please select an image or video file.',
+          });
+          return;
+        }
       } else {
+        // Multiple files - create playlist for CapCut editor
+        const playlist = [];
+        for (const file of files) {
+          if (!file.type.startsWith('video/') && !file.type.startsWith('image/')) {
+            toast({
+              variant: 'destructive',
+              title: 'Unsupported File Type',
+              description: 'Please select only image or video files.',
+            });
+            return;
+          }
+          
+          const key = await saveBlob(file.type.startsWith('video/') ? 'video' : 'image', file);
+          playlist.push({
+            key,
+            kind: file.type.startsWith('video/') ? 'video' : 'image',
+            duration: 12 // Default duration, will be updated in editor
+          });
+        }
+        
+        // Store playlist for multi-clip editing
+        sessionStorage.setItem('mediaPlaylist', JSON.stringify(playlist));
+        sessionStorage.removeItem('mediaKey'); // Clear single media
+        sessionStorage.removeItem('mediaKind');
+        
         toast({
-          variant: 'destructive',
-          title: 'Unsupported File Type',
-          description: 'Please select an image or video file.',
+          title: 'Multi-clip project created',
+          description: `Added ${files.length} files to your project.`,
         });
-        return;
       }
+      
       setHasSelectedMedia(true);
     } catch (e) {
-      console.error('Error creating object URL:', e);
+      console.error('Error processing files:', e);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not process selected file.',
+        description: 'Could not process selected files.',
       });
     }
   };
@@ -475,6 +511,7 @@ export default function CreatePage() {
         ref={fileInputRef}
         className="hidden"
         accept="image/*,video/*"
+        multiple
         onChange={handleFileSelect}
       />
 

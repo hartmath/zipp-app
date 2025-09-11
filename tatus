@@ -1,0 +1,5 @@
+[33mf3bb199[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix(editor): improve video playback and multi-clip handling - Add muted and playsInline attributes for better mobile compatibility - Fix multi-clip playback with proper clip switching and duration calculation - Implement real video duration detection when uploading new clips - Improve playhead sync across multiple video clips - Fix timeline tracking for seamless clip transitions
+[33m81c1e2b[m fix: resolve syntax error in editor by moving activeTool state declaration
+[33m4922040[m feat(editor): implement CapCut-like video editor with 9:16 aspect ratio and multi-clip support
+[33m07c0f5b[m feat(editor): add CapCut-like /create/edit with trim, filters, captions; route Next to editor
+[33m6b531a2[m chore(brand): rename package to zipplign; remove firebase dep; update README; update notification icons
