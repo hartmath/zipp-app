@@ -487,16 +487,16 @@ export default function EditPage() {
       </header>
 
       <main className="flex-1 flex flex-col">
-        {/* Full-screen media display like CapCut */}
-        <div className="flex-1 relative bg-black">
+        {/* Half-screen media display with full image visible */}
+        <div className="h-1/2 relative bg-black">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           )}
-          <div ref={stageRef} className="absolute inset-0 w-full h-full">
+          <div ref={stageRef} className="absolute inset-0 w-full h-full flex items-center justify-center">
             {mediaKind === 'image' && mediaUrl && (
-              <Image src={mediaUrl} alt="Edit" fill className="object-cover" style={{ transform: mediaTransform, filter: mediaFilter } as any} />
+              <Image src={mediaUrl} alt="Edit" fill className="object-contain" style={{ transform: mediaTransform, filter: mediaFilter } as any} />
             )}
             {mediaKind === 'video' && mediaUrl && (
               <video
