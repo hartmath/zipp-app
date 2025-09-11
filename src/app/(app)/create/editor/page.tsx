@@ -29,6 +29,7 @@ export default function CapCutEditor() {
   const [timelineElements, setTimelineElements] = useState<any[]>([])
   const [isExporting, setIsExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState(0)
+  const [currentProject, setCurrentProject] = useState<any>(null)
   
   // Undo/Redo functionality
   const [history, setHistory] = useState<any[]>([])
@@ -328,6 +329,40 @@ export default function CapCutEditor() {
     }
   }
 
+  const handleCaptionsUpdate = (captions: any[]) => {
+    // Add captions to timeline
+    const updatedElements = [...timelineElements, ...captions]
+    setTimelineElements(updatedElements)
+    sessionStorage.setItem('timelineElements', JSON.stringify(updatedElements))
+    addToHistory(updatedElements)
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
+  }
+
+  const handleProjectLoad = (project: any) => {
+    setCurrentProject(project)
+    setTimelineElements(project.timelineElements || [])
+    setDuration(project.duration || 60)
+    sessionStorage.setItem('timelineElements', JSON.stringify(project.timelineElements || []))
+    window.dispatchEvent(new CustomEvent('timelineUpdated'))
+  }
+
+  const handleProjectSave = () => {
+    return {
+      name: currentProject?.name || 'Untitled Project',
+      description: currentProject?.description || '',
+      duration: duration,
+      fps: 30,
+      canvasSize: { width: 1080, height: 1920 },
+      timelineElements: timelineElements,
+      mediaFiles: [], // TODO: Load from session storage
+      settings: {
+        quality: 'medium' as const,
+        format: 'mp4' as const,
+        includeAudio: true
+      }
+    }
+  }
+
   const handleSave = async () => {
     try {
       // Save current project state to session storage
@@ -481,6 +516,12 @@ export default function CapCutEditor() {
               onMediaSelect={handleMediaSelect}
               onTextAdd={handleTextAdd}
               onSoundSelect={handleSoundSelect}
+              onCaptionsUpdate={handleCaptionsUpdate}
+              onProjectLoad={handleProjectLoad}
+              onProjectSave={handleProjectSave}
+              currentTime={currentTime}
+              timelineElements={timelineElements}
+              currentProject={currentProject}
             />
           </div>
 

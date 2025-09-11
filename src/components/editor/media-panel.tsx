@@ -13,19 +13,39 @@ import {
   Sliders,
   Settings,
   Upload,
-  FolderOpen
+  FolderOpen,
+  Wand2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { CaptionsPanel } from "./captions-panel"
+import { BackgroundRemovalPanel } from "./background-removal-panel"
+import { ProjectManagementPanel } from "./project-management-panel"
 
-type Tab = 'media' | 'sounds' | 'text' | 'stickers' | 'effects' | 'filters' | 'adjustment' | 'settings'
+type Tab = 'media' | 'sounds' | 'text' | 'stickers' | 'effects' | 'filters' | 'adjustment' | 'settings' | 'captions' | 'background' | 'projects'
 
 interface MediaPanelProps {
   onMediaSelect?: (media: any) => void
   onTextAdd?: (text: string) => void
   onSoundSelect?: (sound: any) => void
+  onCaptionsUpdate?: (captions: any[]) => void
+  onProjectLoad?: (project: any) => void
+  onProjectSave?: () => any
+  currentTime?: number
+  timelineElements?: any[]
+  currentProject?: any
 }
 
-export function MediaPanel({ onMediaSelect, onTextAdd, onSoundSelect }: MediaPanelProps) {
+export function MediaPanel({ 
+  onMediaSelect, 
+  onTextAdd, 
+  onSoundSelect, 
+  onCaptionsUpdate,
+  onProjectLoad,
+  onProjectSave,
+  currentTime,
+  timelineElements,
+  currentProject
+}: MediaPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('media')
 
   const tabs = [
@@ -36,6 +56,9 @@ export function MediaPanel({ onMediaSelect, onTextAdd, onSoundSelect }: MediaPan
     { id: 'effects' as Tab, label: 'Effects', icon: Sparkles },
     { id: 'filters' as Tab, label: 'Filters', icon: Filter },
     { id: 'adjustment' as Tab, label: 'Adjust', icon: Sliders },
+    { id: 'captions' as Tab, label: 'Captions', icon: Type },
+    { id: 'background' as Tab, label: 'AI Tools', icon: Wand2 },
+    { id: 'projects' as Tab, label: 'Projects', icon: FolderOpen },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ]
 
@@ -55,6 +78,48 @@ export function MediaPanel({ onMediaSelect, onTextAdd, onSoundSelect }: MediaPan
         return <FiltersView />
       case 'adjustment':
         return <AdjustmentView />
+      case 'captions':
+        return (
+          <CaptionsPanel 
+            onCaptionsUpdate={onCaptionsUpdate}
+            currentTime={currentTime}
+            timelineElements={timelineElements}
+          />
+        )
+      case 'background':
+        return (
+          <BackgroundRemovalPanel 
+            onImageProcessed={(blob) => {
+              // Add processed image to timeline
+              const newElement = {
+                id: Math.random().toString(36).slice(2),
+                type: 'image',
+                name: 'AI Processed Image',
+                url: URL.createObjectURL(blob),
+                start: 0,
+                end: 5,
+                properties: {
+                  opacity: 100,
+                  scale: 100,
+                  rotation: 0
+                }
+              }
+              
+              const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+              existingElements.push(newElement)
+              sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+              window.dispatchEvent(new CustomEvent('timelineUpdated'))
+            }}
+          />
+        )
+      case 'projects':
+        return (
+          <ProjectManagementPanel 
+            onProjectLoad={onProjectLoad}
+            onProjectSave={onProjectSave}
+            currentProject={currentProject}
+          />
+        )
       case 'settings':
         return <SettingsView />
       default:
