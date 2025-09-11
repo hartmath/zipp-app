@@ -474,14 +474,12 @@ export default function CreatePage() {
       {/* Camera View */}
       <div className="absolute inset-0 z-0">
          {uploadedImageUrl ? (
-            // Show uploaded image in full-screen editing mode like CapCut
-            <div className="w-full h-full bg-black">
-              <img 
-                src={uploadedImageUrl} 
-                alt="Uploaded media preview"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            // Show uploaded image filling the entire screen
+            <img 
+              src={uploadedImageUrl} 
+              alt="Uploaded media preview"
+              className="w-full h-full object-cover"
+            />
          ) : (selectedMode === 'Camera' || selectedMode === 'Photos') ? (
             <>
             <video 
