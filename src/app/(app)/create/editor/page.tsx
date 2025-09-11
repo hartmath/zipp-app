@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Save, Download, Share, Undo, Redo } from "lucide-react"
@@ -15,6 +15,8 @@ import { MediaPanel } from "@/components/editor/media-panel"
 import { PropertiesPanel } from "@/components/editor/properties-panel"
 import { loadBlobUrl } from "@/lib/media-store"
 import { exportTimelineToVideo, ExportOptions } from "@/lib/video-export"
+import { debounce, throttle, PerformanceMonitor } from "@/lib/performance-optimization"
+import { PerformanceMonitorComponent } from "@/components/performance-monitor"
 
 export default function CapCutEditor() {
   const router = useRouter()
@@ -34,6 +36,9 @@ export default function CapCutEditor() {
   // Undo/Redo functionality
   const [history, setHistory] = useState<any[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
+  
+  // Performance monitoring
+  const performanceMonitor = useMemo(() => PerformanceMonitor.getInstance(), [])
 
   // Panel sizes
   const [mediaPanelSize, setMediaPanelSize] = useState(20)
@@ -264,10 +269,11 @@ export default function CapCutEditor() {
     window.dispatchEvent(new CustomEvent('timelineUpdated'))
   }
 
-  const handlePropertyChange = (property: string, value: any) => {
-    console.log('Property changed:', property, value)
-    // Update selected element properties
-    if (selectedElement) {
+  // Debounced property change for better performance
+  const debouncedPropertyChange = useCallback(
+    debounce((property: string, value: any) => {
+      if (!selectedElement) return
+
       const updatedElement = {
         ...selectedElement,
         properties: {
@@ -290,7 +296,12 @@ export default function CapCutEditor() {
       
       // Trigger timeline update
       window.dispatchEvent(new CustomEvent('timelineUpdated'))
-    }
+    }, 100),
+    [selectedElement, timelineElements]
+  )
+
+  const handlePropertyChange = (property: string, value: any) => {
+    debouncedPropertyChange(property, value)
   }
 
   const addToHistory = (newTimelineElements: any[]) => {
@@ -578,6 +589,9 @@ export default function CapCutEditor() {
           isPlaying={isPlaying}
         />
       </div>
+      
+      {/* Performance Monitor */}
+      <PerformanceMonitorComponent />
     </div>
   )
 }
