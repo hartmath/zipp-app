@@ -87,6 +87,8 @@ export default function CreatePage() {
   const [selectedMusic, setSelectedMusic] = useState<any>(null);
   // Track when media is ready so we can show Next
   const [hasSelectedMedia, setHasSelectedMedia] = useState(false);
+  // Track uploaded image for preview
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -364,6 +366,15 @@ export default function CreatePage() {
     return () => clearInterval(autoSaveInterval);
   }, [autoSaveDraft]);
 
+  // Cleanup uploaded image URL on unmount
+  useEffect(() => {
+    return () => {
+      if (uploadedImageUrl) {
+        URL.revokeObjectURL(uploadedImageUrl);
+      }
+    };
+  }, [uploadedImageUrl]);
+
   const handleMainButtonPress = () => {
     if (selectedMode === 'Camera') {
       if (isRecording) {
@@ -396,10 +407,15 @@ export default function CreatePage() {
           const key = await saveBlob('image', file);
           sessionStorage.setItem('mediaKey', key);
           sessionStorage.setItem('mediaKind', 'image');
+          
+          // Create preview URL for uploaded image
+          const imageUrl = URL.createObjectURL(file);
+          setUploadedImageUrl(imageUrl);
         } else if (file.type.startsWith('video/')) {
           const key = await saveBlob('video', file);
           sessionStorage.setItem('mediaKey', key);
           sessionStorage.setItem('mediaKind', 'video');
+          setUploadedImageUrl(null); // Clear image preview for video
         } else {
           toast({
             variant: 'destructive',
@@ -433,6 +449,7 @@ export default function CreatePage() {
         sessionStorage.setItem('mediaPlaylist', JSON.stringify(playlist));
         sessionStorage.removeItem('mediaKey'); // Clear single media
         sessionStorage.removeItem('mediaKind');
+        setUploadedImageUrl(null); // Clear image preview for multi-file
         
         toast({
           title: 'Multi-clip project created',
@@ -456,7 +473,16 @@ export default function CreatePage() {
     <div className="relative flex h-full w-full flex-col items-center justify-between bg-black text-white">
       {/* Camera View */}
       <div className="absolute inset-0 z-0">
-         {(selectedMode === 'Camera' || selectedMode === 'Photos') ? (
+         {uploadedImageUrl ? (
+            // Show uploaded image preview with proper sizing
+            <div className="w-full h-full flex items-center justify-center bg-black">
+              <img 
+                src={uploadedImageUrl} 
+                alt="Uploaded media preview"
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+         ) : (selectedMode === 'Camera' || selectedMode === 'Photos') ? (
             <>
             <video 
                 ref={videoRef} 
