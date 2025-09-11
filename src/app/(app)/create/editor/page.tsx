@@ -75,32 +75,108 @@ export default function CapCutEditor() {
 
   const handleMediaSelect = (media: any) => {
     console.log('Media selected:', media)
-    // Handle media selection
+    // Add media to timeline
+    setSelectedElement({
+      id: Math.random().toString(36).slice(2),
+      type: media.type,
+      name: media.name,
+      properties: {
+        opacity: 100,
+        volume: 100,
+        rotation: 0,
+        scale: 100,
+        color: '#ffffff',
+        fontSize: 16
+      }
+    })
   }
 
   const handleTextAdd = (text: string) => {
     console.log('Text added:', text)
-    // Handle text addition
+    // Add text element to timeline
+    setSelectedElement({
+      id: Math.random().toString(36).slice(2),
+      type: 'text',
+      name: text,
+      properties: {
+        opacity: 100,
+        volume: 100,
+        rotation: 0,
+        scale: 100,
+        color: '#ffffff',
+        fontSize: 16
+      }
+    })
   }
 
   const handleSoundSelect = (sound: any) => {
     console.log('Sound selected:', sound)
-    // Handle sound selection
+    // Add audio to timeline
+    setSelectedElement({
+      id: Math.random().toString(36).slice(2),
+      type: 'audio',
+      name: sound.name,
+      properties: {
+        opacity: 100,
+        volume: 100,
+        rotation: 0,
+        scale: 100,
+        color: '#ffffff',
+        fontSize: 16
+      }
+    })
   }
 
   const handlePropertyChange = (property: string, value: any) => {
     console.log('Property changed:', property, value)
-    // Handle property changes
+    // Update selected element properties
+    if (selectedElement) {
+      setSelectedElement({
+        ...selectedElement,
+        properties: {
+          ...selectedElement.properties,
+          [property]: value
+        }
+      })
+    }
   }
 
-  const handleSave = () => {
-    console.log('Saving project...')
-    // Handle save
+  const handleSave = async () => {
+    try {
+      // Save current project state to session storage
+      const projectData = {
+        mediaUrl,
+        mediaType,
+        currentTime,
+        duration,
+        volume,
+        muted,
+        selectedElement,
+        timestamp: Date.now()
+      }
+      
+      sessionStorage.setItem('editorProject', JSON.stringify(projectData))
+      console.log('Project saved successfully')
+      
+      // Show success feedback
+      alert('Project saved successfully!')
+    } catch (error) {
+      console.error('Error saving project:', error)
+      alert('Error saving project. Please try again.')
+    }
   }
 
-  const handleExport = () => {
-    console.log('Exporting...')
-    // Handle export
+  const handleExport = async () => {
+    try {
+      // Save final project and navigate to post page
+      await handleSave()
+      
+      // Navigate to post page for publishing
+      router.push('/create/post')
+    } catch (error) {
+      console.error('Error exporting:', error)
+      alert('Error exporting project. Please try again.')
+    }
   }
 
   return (
@@ -116,7 +192,7 @@ export default function CapCutEditor() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold">CapCut Editor</h1>
+          <h1 className="text-lg font-semibold">Zipplign</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -127,16 +203,16 @@ export default function CapCutEditor() {
             className="h-8"
           >
             <Save className="h-4 w-4 mr-2" />
-            Save
+            Save Draft
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleExport}
-            className="h-8"
+            className="h-8 bg-teal-600 hover:bg-teal-700 text-white"
           >
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Continue to Post
           </Button>
           <Button
             variant="outline"
@@ -151,36 +227,28 @@ export default function CapCutEditor() {
 
       {/* Main Content */}
       <div className="flex-1 min-h-0">
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="h-full w-full gap-1"
-        >
+        <div className="h-full w-full flex gap-1">
           {/* Media Panel */}
-          <ResizablePanel
-            defaultSize={mediaPanelSize}
-            minSize={15}
-            maxSize={40}
-            onResize={setMediaPanelSize}
+          <div 
             className="min-w-0"
+            style={{ width: `${mediaPanelSize}%` }}
           >
             <MediaPanel
               onMediaSelect={handleMediaSelect}
               onTextAdd={handleTextAdd}
               onSoundSelect={handleSoundSelect}
             />
-          </ResizablePanel>
+          </div>
 
-          <ResizableHandle withHandle />
+          <div className="w-1 bg-gray-700" />
 
           {/* Preview Panel */}
-          <ResizablePanel
-            defaultSize={previewPanelSize}
-            minSize={40}
-            onResize={setPreviewPanelSize}
+          <div 
             className="min-w-0"
+            style={{ width: `${previewPanelSize}%` }}
           >
             <PreviewPanel
-              mediaUrl={mediaUrl}
+              mediaUrl={mediaUrl || undefined}
               mediaType={mediaType}
               currentTime={currentTime}
               duration={duration}
@@ -193,24 +261,21 @@ export default function CapCutEditor() {
               onVolumeChange={handleVolumeChange}
               onMuteToggle={handleMuteToggle}
             />
-          </ResizablePanel>
+          </div>
 
-          <ResizableHandle withHandle />
+          <div className="w-1 bg-gray-700" />
 
           {/* Properties Panel */}
-          <ResizablePanel
-            defaultSize={propertiesPanelSize}
-            minSize={15}
-            maxSize={40}
-            onResize={setPropertiesPanelSize}
+          <div 
             className="min-w-0"
+            style={{ width: `${propertiesPanelSize}%` }}
           >
             <PropertiesPanel
               selectedElement={selectedElement}
               onPropertyChange={handlePropertyChange}
             />
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
       </div>
 
       {/* Timeline */}
