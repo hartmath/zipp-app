@@ -474,13 +474,15 @@ export default function CreatePage() {
       {/* Camera View */}
       <div className="absolute inset-0 z-0">
          {uploadedImageUrl ? (
-            // Show uploaded image preview with proper sizing
+            // Show uploaded image preview in half the screen
             <div className="w-full h-full flex items-center justify-center bg-black">
-              <img 
-                src={uploadedImageUrl} 
-                alt="Uploaded media preview"
-                className="max-w-full max-h-full object-contain"
-              />
+              <div className="w-1/2 h-1/2 flex items-center justify-center bg-gray-900/50 rounded-lg border border-white/20">
+                <img 
+                  src={uploadedImageUrl} 
+                  alt="Uploaded media preview"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
+              </div>
             </div>
          ) : (selectedMode === 'Camera' || selectedMode === 'Photos') ? (
             <>
