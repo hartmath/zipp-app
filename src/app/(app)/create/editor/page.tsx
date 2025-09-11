@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Save, Download, Share } from "lucide-react"
+import { ArrowLeft, Save, Download, Share, Undo, Redo } from "lucide-react"
 import { 
   ResizablePanelGroup, 
   ResizablePanel, 
@@ -14,6 +14,7 @@ import { PreviewPanel } from "@/components/editor/preview-panel"
 import { MediaPanel } from "@/components/editor/media-panel"
 import { PropertiesPanel } from "@/components/editor/properties-panel"
 import { loadBlobUrl } from "@/lib/media-store"
+import { exportTimelineToVideo, ExportOptions } from "@/lib/video-export"
 
 export default function CapCutEditor() {
   const router = useRouter()
@@ -26,6 +27,12 @@ export default function CapCutEditor() {
   const [muted, setMuted] = useState(false)
   const [selectedElement, setSelectedElement] = useState<any>(null)
   const [timelineElements, setTimelineElements] = useState<any[]>([])
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState(0)
+  
+  // Undo/Redo functionality
+  const [history, setHistory] = useState<any[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
 
   // Panel sizes
   const [mediaPanelSize, setMediaPanelSize] = useState(20)
@@ -66,6 +73,12 @@ export default function CapCutEditor() {
     loadMedia()
     loadTimelineElements()
 
+    // Initialize history with current state
+    if (timelineElements.length > 0 && history.length === 0) {
+      setHistory([{ timelineElements: [...timelineElements] }])
+      setHistoryIndex(0)
+    }
+
     // Listen for timeline updates
     const handleTimelineUpdate = () => {
       loadTimelineElements()
@@ -101,6 +114,14 @@ export default function CapCutEditor() {
         // Ctrl+Right to seek forward
         event.preventDefault()
         setCurrentTime(Math.min(duration, currentTime + 1))
+      } else if (event.key === 'z' && event.ctrlKey && !event.shiftKey) {
+        // Ctrl+Z to undo
+        event.preventDefault()
+        handleUndo()
+      } else if ((event.key === 'z' && event.ctrlKey && event.shiftKey) || (event.key === 'y' && event.ctrlKey)) {
+        // Ctrl+Shift+Z or Ctrl+Y to redo
+        event.preventDefault()
+        handleRedo()
       }
     }
     
@@ -263,7 +284,46 @@ export default function CapCutEditor() {
       setTimelineElements(updatedTimelineElements)
       sessionStorage.setItem('timelineElements', JSON.stringify(updatedTimelineElements))
       
+      // Add to history
+      addToHistory(updatedTimelineElements)
+      
       // Trigger timeline update
+      window.dispatchEvent(new CustomEvent('timelineUpdated'))
+    }
+  }
+
+  const addToHistory = (newTimelineElements: any[]) => {
+    const newHistory = history.slice(0, historyIndex + 1)
+    newHistory.push({ timelineElements: [...newTimelineElements] })
+    
+    // Limit history to 50 states
+    if (newHistory.length > 50) {
+      newHistory.shift()
+    } else {
+      setHistoryIndex(historyIndex + 1)
+    }
+    
+    setHistory(newHistory)
+  }
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1
+      const state = history[newIndex]
+      setTimelineElements([...state.timelineElements])
+      setHistoryIndex(newIndex)
+      sessionStorage.setItem('timelineElements', JSON.stringify(state.timelineElements))
+      window.dispatchEvent(new CustomEvent('timelineUpdated'))
+    }
+  }
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1
+      const state = history[newIndex]
+      setTimelineElements([...state.timelineElements])
+      setHistoryIndex(newIndex)
+      sessionStorage.setItem('timelineElements', JSON.stringify(state.timelineElements))
       window.dispatchEvent(new CustomEvent('timelineUpdated'))
     }
   }
@@ -296,14 +356,51 @@ export default function CapCutEditor() {
 
   const handleExport = async () => {
     try {
-      // Save final project and navigate to post page
+      setIsExporting(true)
+      setExportProgress(0)
+      
+      // Save final project first
       await handleSave()
       
-      // Navigate to post page for publishing
-      router.push('/create/post')
+      if (timelineElements.length === 0) {
+        alert('No elements to export. Please add some media to the timeline.')
+        setIsExporting(false)
+        return
+      }
+      
+      // Export video
+      const exportOptions: ExportOptions = {
+        format: 'mp4',
+        quality: 'medium',
+        fps: 30,
+        width: 1080,
+        height: 1920 // 9:16 aspect ratio for mobile
+      }
+      
+      const result = await exportTimelineToVideo(
+        timelineElements,
+        exportOptions,
+        (progress) => setExportProgress(progress)
+      )
+      
+      if (result.success && result.blob) {
+        // Save exported video to session storage for post page
+        const videoUrl = URL.createObjectURL(result.blob)
+        sessionStorage.setItem('exportedVideo', videoUrl)
+        sessionStorage.setItem('exportedVideoType', 'video/mp4')
+        
+        // Navigate to post page
+        router.push('/create/post')
+      } else {
+        alert(`Export failed: ${result.error || 'Unknown error'}`)
+      }
+      
     } catch (error) {
       console.error('Error exporting:', error)
       alert('Error exporting project. Please try again.')
+    } finally {
+      setIsExporting(false)
+      setExportProgress(0)
     }
   }
 
@@ -327,6 +424,24 @@ export default function CapCutEditor() {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleUndo}
+            disabled={historyIndex <= 0}
+            className="h-8"
+          >
+            <Undo className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRedo}
+            disabled={historyIndex >= history.length - 1}
+            className="h-8"
+          >
+            <Redo className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleSave}
             className="h-8"
           >
@@ -337,10 +452,11 @@ export default function CapCutEditor() {
             variant="outline"
             size="sm"
             onClick={handleExport}
+            disabled={isExporting}
             className="h-8 bg-teal-600 hover:bg-teal-700 text-white"
           >
             <Download className="h-4 w-4 mr-2" />
-            Continue to Post
+            {isExporting ? `Exporting... ${Math.round(exportProgress)}%` : 'Continue to Post'}
           </Button>
           <Button
             variant="outline"

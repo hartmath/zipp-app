@@ -471,56 +471,224 @@ function TextView({ onTextAdd }: { onTextAdd?: (text: string) => void }) {
 }
 
 function StickersView() {
+  const stickers = [
+    { id: '1', name: 'Heart', emoji: '❤️' },
+    { id: '2', name: 'Fire', emoji: '🔥' },
+    { id: '3', name: 'Star', emoji: '⭐' },
+    { id: '4', name: 'Thumbs Up', emoji: '👍' },
+    { id: '5', name: 'Party', emoji: '🎉' },
+    { id: '6', name: 'Cool', emoji: '😎' },
+  ]
+
   return (
-    <div className="h-full flex items-center justify-center text-gray-400">
-      <div className="text-center">
-        <Smile className="h-12 w-12 mx-auto mb-2" />
-        <p>Stickers coming soon...</p>
+    <div className="h-full flex flex-col">
+      <div className="p-3 border-b border-gray-700">
+        <h3 className="text-sm font-medium text-gray-300">Stickers</h3>
       </div>
+      <ScrollArea className="flex-1 p-3">
+        <div className="grid grid-cols-3 gap-2">
+          {stickers.map((sticker) => (
+            <div
+              key={sticker.id}
+              className="aspect-square bg-gray-800 rounded border border-gray-700 cursor-pointer hover:border-blue-500 transition-colors flex items-center justify-center text-2xl"
+              onClick={() => {
+                // Add sticker to timeline
+                const newElement = {
+                  id: Math.random().toString(36).slice(2),
+                  type: 'sticker',
+                  name: sticker.name,
+                  emoji: sticker.emoji,
+                  start: 0,
+                  end: 5,
+                  properties: {
+                    opacity: 100,
+                    scale: 100,
+                    rotation: 0
+                  }
+                }
+                
+                const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+                existingElements.push(newElement)
+                sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+                window.dispatchEvent(new CustomEvent('timelineUpdated'))
+              }}
+            >
+              {sticker.emoji}
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
 
 function EffectsView() {
+  const effects = [
+    { id: '1', name: 'Fade In', type: 'transition' },
+    { id: '2', name: 'Fade Out', type: 'transition' },
+    { id: '3', name: 'Zoom In', type: 'animation' },
+    { id: '4', name: 'Zoom Out', type: 'animation' },
+    { id: '5', name: 'Slide Left', type: 'transition' },
+    { id: '6', name: 'Slide Right', type: 'transition' },
+  ]
+
   return (
-    <div className="h-full flex items-center justify-center text-gray-400">
-      <div className="text-center">
-        <Sparkles className="h-12 w-12 mx-auto mb-2" />
-        <p>Effects coming soon...</p>
+    <div className="h-full flex flex-col">
+      <div className="p-3 border-b border-gray-700">
+        <h3 className="text-sm font-medium text-gray-300">Effects</h3>
       </div>
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-2">
+          {effects.map((effect) => (
+            <div
+              key={effect.id}
+              className="p-3 bg-gray-800 rounded border border-gray-700 cursor-pointer hover:border-blue-500 transition-colors"
+              onClick={() => {
+                // Apply effect to selected element
+                console.log('Applying effect:', effect.name)
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-white">{effect.name}</p>
+                  <p className="text-xs text-gray-400 capitalize">{effect.type}</p>
+                </div>
+                <Sparkles className="h-4 w-4 text-gray-400" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
 
 function FiltersView() {
+  const filters = [
+    { id: '1', name: 'Vintage', preview: 'sepia' },
+    { id: '2', name: 'Black & White', preview: 'grayscale' },
+    { id: '3', name: 'Bright', preview: 'brightness' },
+    { id: '4', name: 'Dark', preview: 'darken' },
+    { id: '5', name: 'Warm', preview: 'warm' },
+    { id: '6', name: 'Cool', preview: 'cool' },
+  ]
+
   return (
-    <div className="h-full flex items-center justify-center text-gray-400">
-      <div className="text-center">
-        <Filter className="h-12 w-12 mx-auto mb-2" />
-        <p>Filters coming soon...</p>
+    <div className="h-full flex flex-col">
+      <div className="p-3 border-b border-gray-700">
+        <h3 className="text-sm font-medium text-gray-300">Filters</h3>
       </div>
+      <ScrollArea className="flex-1 p-3">
+        <div className="grid grid-cols-2 gap-2">
+          {filters.map((filter) => (
+            <div
+              key={filter.id}
+              className="aspect-video bg-gray-800 rounded border border-gray-700 cursor-pointer hover:border-blue-500 transition-colors flex items-center justify-center"
+              onClick={() => {
+                // Apply filter to selected element
+                console.log('Applying filter:', filter.name)
+              }}
+            >
+              <div className="text-center">
+                <div className="w-8 h-8 bg-gray-600 rounded mb-2 mx-auto"></div>
+                <p className="text-xs text-white">{filter.name}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   )
 }
 
 function AdjustmentView() {
   return (
-    <div className="h-full flex items-center justify-center text-gray-400">
-      <div className="text-center">
-        <Sliders className="h-12 w-12 mx-auto mb-2" />
-        <p>Adjustments coming soon...</p>
+    <div className="h-full flex flex-col">
+      <div className="p-3 border-b border-gray-700">
+        <h3 className="text-sm font-medium text-gray-300">Adjustments</h3>
       </div>
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Brightness</label>
+            <input
+              type="range"
+              min="0"
+              max="200"
+              defaultValue="100"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Contrast</label>
+            <input
+              type="range"
+              min="0"
+              max="200"
+              defaultValue="100"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Saturation</label>
+            <input
+              type="range"
+              min="0"
+              max="200"
+              defaultValue="100"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Hue</label>
+            <input
+              type="range"
+              min="-180"
+              max="180"
+              defaultValue="0"
+              className="w-full"
+            />
+          </div>
+        </div>
+      </ScrollArea>
     </div>
   )
 }
 
 function SettingsView() {
   return (
-    <div className="h-full flex items-center justify-center text-gray-400">
-      <div className="text-center">
-        <Settings className="h-12 w-12 mx-auto mb-2" />
-        <p>Settings coming soon...</p>
+    <div className="h-full flex flex-col">
+      <div className="p-3 border-b border-gray-700">
+        <h3 className="text-sm font-medium text-gray-300">Settings</h3>
       </div>
+      <ScrollArea className="flex-1 p-3">
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Project FPS</label>
+            <select className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white">
+              <option value="24">24 FPS</option>
+              <option value="30" selected>30 FPS</option>
+              <option value="60">60 FPS</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Canvas Size</label>
+            <select className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white">
+              <option value="1080x1920" selected>1080x1920 (9:16)</option>
+              <option value="1920x1080">1920x1080 (16:9)</option>
+              <option value="1080x1080">1080x1080 (1:1)</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm text-gray-300 mb-2 block">Quality</label>
+            <select className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+      </ScrollArea>
     </div>
   )
 }

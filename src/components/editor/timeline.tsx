@@ -170,6 +170,9 @@ export function Timeline({
   const [snapping, setSnapping] = useState(true)
   const [draggedElement, setDraggedElement] = useState<string | null>(null)
   const timelineRef = useRef<HTMLDivElement>(null)
+  
+  // Calculate pixels per second based on zoom
+  const pixelsPerSecond = 20 * zoom
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -182,12 +185,9 @@ export function Timeline({
     
     const rect = timelineRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
-    const width = rect.width
-    const time = (x / width) * duration
+    const time = (x / (duration * pixelsPerSecond)) * duration
     onSeek(Math.max(0, Math.min(time, duration)))
-  }, [duration, onSeek])
-
-  const pixelsPerSecond = 50 * zoom
+  }, [duration, onSeek, pixelsPerSecond])
 
   return (
     <div className="h-full bg-gray-900 border-t border-gray-700 flex flex-col">
