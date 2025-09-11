@@ -475,7 +475,6 @@ export default function EditPage() {
   // Cleanup ticker on unmount
   useEffect(() => () => { if (tickerRef.current) clearInterval(tickerRef.current); }, []);
 
-  // Force rebuild for Vercel
   return (
     <div className="flex h-full w-full flex-col bg-black text-white">
       <header className="flex items-center justify-between p-3 border-b border-gray-800">
