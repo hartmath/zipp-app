@@ -22,8 +22,12 @@ import { BackgroundRemovalPanel } from "./background-removal-panel"
 import { ProjectManagementPanel } from "./project-management-panel"
 import { AudioEffectsPanel } from "./audio-effects-panel"
 import { KeyframePanel } from "./keyframe-panel"
+import { MultiTrackPanel } from "./multi-track-panel"
+import { GreenScreenPanel } from "./green-screen-panel"
+import { TextAnimationsPanel } from "./text-animations-panel"
+import { ColorGradingPanel } from "./color-grading-panel"
 
-type Tab = 'media' | 'sounds' | 'text' | 'stickers' | 'effects' | 'filters' | 'adjustment' | 'settings' | 'captions' | 'background' | 'projects' | 'audio-effects' | 'keyframes'
+type Tab = 'media' | 'sounds' | 'text' | 'stickers' | 'effects' | 'filters' | 'adjustment' | 'settings' | 'captions' | 'background' | 'projects' | 'audio-effects' | 'keyframes' | 'multi-track' | 'green-screen' | 'text-animations' | 'color-grading'
 
 interface MediaPanelProps {
   onMediaSelect?: (media: any) => void
@@ -66,6 +70,10 @@ export function MediaPanel({
     { id: 'background' as Tab, label: 'AI Tools', icon: Wand2 },
     { id: 'audio-effects' as Tab, label: 'Audio FX', icon: Music },
     { id: 'keyframes' as Tab, label: 'Keyframes', icon: Settings },
+    { id: 'multi-track' as Tab, label: 'Multi-Track', icon: Music },
+    { id: 'green-screen' as Tab, label: 'Green Screen', icon: Wand2 },
+    { id: 'text-animations' as Tab, label: 'Text Anim', icon: Type },
+    { id: 'color-grading' as Tab, label: 'Color', icon: Settings },
     { id: 'projects' as Tab, label: 'Projects', icon: FolderOpen },
     { id: 'settings' as Tab, label: 'Settings', icon: Settings },
   ]
@@ -151,6 +159,105 @@ export function MediaPanel({
             selectedElement={selectedElement}
             currentTime={currentTime}
             onPropertyChange={onPropertyChange}
+          />
+        )
+      case 'multi-track':
+        return (
+          <MultiTrackPanel 
+            onMixComplete={(blob) => {
+              // Add mixed audio to timeline
+              const newElement = {
+                id: Math.random().toString(36).slice(2),
+                type: 'audio',
+                name: 'Mixed Audio',
+                url: URL.createObjectURL(blob),
+                start: 0,
+                end: 10,
+                properties: {
+                  volume: 1,
+                  muted: false
+                }
+              }
+              
+              const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+              existingElements.push(newElement)
+              sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+              window.dispatchEvent(new CustomEvent('timelineUpdated'))
+            }}
+          />
+        )
+      case 'green-screen':
+        return (
+          <GreenScreenPanel 
+            onImageProcessed={(blob) => {
+              // Add processed image to timeline
+              const newElement = {
+                id: Math.random().toString(36).slice(2),
+                type: 'image',
+                name: 'Green Screen Image',
+                url: URL.createObjectURL(blob),
+                start: 0,
+                end: 5,
+                properties: {
+                  opacity: 100,
+                  scale: 100,
+                  rotation: 0
+                }
+              }
+              
+              const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+              existingElements.push(newElement)
+              sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+              window.dispatchEvent(new CustomEvent('timelineUpdated'))
+            }}
+          />
+        )
+      case 'text-animations':
+        return (
+          <TextAnimationsPanel 
+            selectedElement={selectedElement}
+            onAnimationApply={(animation) => {
+              // Apply animation to selected element
+              if (selectedElement && timelineElements) {
+                const updatedElements = (timelineElements || []).map(el => {
+                  if (el.id === selectedElement.id) {
+                    return {
+                      ...el,
+                      animation: animation
+                    }
+                  }
+                  return el
+                })
+                sessionStorage.setItem('timelineElements', JSON.stringify(updatedElements))
+                window.dispatchEvent(new CustomEvent('timelineUpdated'))
+              }
+            }}
+          />
+        )
+      case 'color-grading':
+        return (
+          <ColorGradingPanel 
+            onImageProcessed={(blob) => {
+              // Add processed image to timeline
+              const newElement = {
+                id: Math.random().toString(36).slice(2),
+                type: 'image',
+                name: 'Color Graded Image',
+                url: URL.createObjectURL(blob),
+                start: 0,
+                end: 5,
+                properties: {
+                  opacity: 100,
+                  scale: 100,
+                  rotation: 0
+                }
+              }
+              
+              const existingElements = JSON.parse(sessionStorage.getItem('timelineElements') || '[]')
+              existingElements.push(newElement)
+              sessionStorage.setItem('timelineElements', JSON.stringify(existingElements))
+              window.dispatchEvent(new CustomEvent('timelineUpdated'))
+            }}
           />
         )
       case 'projects':
