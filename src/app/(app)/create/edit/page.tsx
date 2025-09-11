@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Move, RotateCcw, RotateCw, Play, Pause, SkipBack, SkipForward, Scissors, Crop as CropIcon, SlidersHorizontal, Type as TypeIcon, Music, Sparkles, Wand2, RotateCw as RotateIcon, Gauge, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Loader2, Move, RotateCcw, RotateCw, Play, Pause, SkipBack, SkipForward, Scissors, Crop as CropIcon, SlidersHorizontal, Type as TypeIcon, Music, Sparkles, Wand2, RotateCw as RotateIcon, Gauge, Plus, Minus, Camera as CameraIcon } from 'lucide-react';
 import Image from 'next/image';
 import { loadBlobUrl, saveBlob } from '@/lib/media-store';
 import { Timeline } from '@/components/editor/timeline';
@@ -487,29 +487,29 @@ export default function EditPage() {
       </header>
 
       <main className="flex-1 flex flex-col">
-        <div className="flex-1 flex items-center justify-center bg-black p-4">
+        {/* Full-screen media display like CapCut */}
+        <div className="flex-1 relative bg-black">
           {loading && (
-            <div className="flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center z-10">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
           )}
-          <div ref={stageRef} className="relative w-full max-w-sm aspect-[9/16] bg-black rounded-lg overflow-hidden border border-gray-700">
-            <div className="absolute inset-0 flex items-center justify-center">
-              {mediaKind === 'image' && mediaUrl && (
-                <Image src={mediaUrl} alt="Edit" fill className="object-cover" style={{ transform: mediaTransform, filter: mediaFilter } as any} />
-              )}
-              {mediaKind === 'video' && mediaUrl && (
-                <video
-                  ref={videoRef}
-                  src={mediaUrl}
-                  className="h-full w-full object-cover"
-                  onLoadedMetadata={onLoadedMetadata}
-                  style={{ transform: mediaTransform, filter: mediaFilter } as any}
-                  muted
-                  playsInline
-                />
-              )}
-            </div>
+          <div ref={stageRef} className="absolute inset-0 w-full h-full">
+            {mediaKind === 'image' && mediaUrl && (
+              <Image src={mediaUrl} alt="Edit" fill className="object-cover" style={{ transform: mediaTransform, filter: mediaFilter } as any} />
+            )}
+            {mediaKind === 'video' && mediaUrl && (
+              <video
+                ref={videoRef}
+                src={mediaUrl}
+                className="h-full w-full object-cover"
+                onLoadedMetadata={onLoadedMetadata}
+                style={{ transform: mediaTransform, filter: mediaFilter } as any}
+                muted
+                playsInline
+              />
+            )}
+          </div>
             {/* Overlays */}
             {overlays.map((o) => {
               const windowRange = overlayDurations[o.id];
@@ -529,17 +529,73 @@ export default function EditPage() {
             })}
           </div>
           <canvas ref={canvasRef} className="hidden" />
+          
+          {/* Left Sidebar - Editing Tools (CapCut style) */}
+          <aside className="absolute left-3 top-1/4 z-10 flex flex-col items-center gap-4">
+            <Button variant="ghost" size="icon" className="h-auto flex-col gap-1 text-white">
+              <CameraIcon className="h-5 w-5" />
+              <span className="text-xs font-light">Video</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="h-auto flex-col gap-1 text-white">
+              <TypeIcon className="h-5 w-5" />
+              <span className="text-xs font-light">Text</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="h-auto flex-col gap-1 text-white">
+              <Music className="h-5 w-5" />
+              <span className="text-xs font-light">Music</span>
+            </Button>
+          </aside>
         </div>
 
-        {/* Tools */}
-        <div className="border-t border-gray-800 p-3 space-y-3 bg-black pb-28">
-          {/* Transport controls */}
-          <div className="flex items-center justify-center gap-3 text-xs text-white/80 w-full">
-            <button aria-label="rewind to start" className="px-2 py-1 rounded bg-white/10" onClick={() => { setPlayhead(trimStart); if (videoRef.current) videoRef.current.currentTime = trimStart; if (audioRef.current) audioRef.current.currentTime = trimStart; }}><RotateCcw className="h-4 w-4" /></button>
-            <button aria-label="step back" className="px-2 py-1 rounded bg-white/10" onMouseDown={() => startSeekHold(-0.1)} onMouseUp={stopSeekHold} onMouseLeave={stopSeekHold} onClick={() => step(-0.1)}><SkipBack className="h-4 w-4" /></button>
-            <button aria-label="play pause" className="h-7 w-7 rounded-full bg-white text-black font-bold flex items-center justify-center" onClick={togglePlay}>{isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
-            <button aria-label="step forward" className="px-2 py-1 rounded bg-white/10" onMouseDown={() => startSeekHold(0.1)} onMouseUp={stopSeekHold} onMouseLeave={stopSeekHold} onClick={() => step(0.1)}><SkipForward className="h-4 w-4" /></button>
-            <div className="ml-2 tabular-nums">{String(Math.floor(playhead/60)).padStart(2,'0')}:{String(Math.floor(playhead%60)).padStart(2,'0')} / {String(Math.floor(((trimEnd||duration||DEFAULT_DURATION))/60)).padStart(2,'0')}:{String(Math.floor(((trimEnd||duration||DEFAULT_DURATION))%60)).padStart(2,'0')}</div>
+        {/* CapCut-style Controls */}
+        <div className="bg-black border-t border-gray-800 p-3 space-y-3 pb-28">
+          {/* Playback Controls */}
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <SkipBack className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <div className="h-4 w-4 border border-white rounded-sm" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <SkipForward className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 bg-white/20 rounded-full">
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </Button>
+            <div className="ml-2 text-xs text-white/60 tabular-nums">
+              {String(Math.floor(playhead/60)).padStart(2,'0')}:{String(Math.floor(playhead%60)).padStart(2,'0')} / {String(Math.floor(((trimEnd||duration||DEFAULT_DURATION))/60)).padStart(2,'0')}:{String(Math.floor(((trimEnd||duration||DEFAULT_DURATION))%60)).padStart(2,'0')}
+            </div>
+          </div>
+          
+          {/* Timeline */}
+          <div className="w-full px-4 mb-4">
+            <div className="relative h-16 bg-gray-800 rounded-lg p-2">
+              <div className="flex items-center h-full">
+                <div className="w-1 h-full bg-yellow-400 rounded-full mr-2" />
+                <div className="text-xs text-yellow-400">Voice over</div>
+                <div className="text-xs text-white/60 ml-2">Adjust music</div>
+              </div>
+              <div className="absolute top-2 left-0 w-full h-12 bg-gray-700 rounded">
+                <div className="flex items-center h-full px-2">
+                  <div className="w-1 h-full bg-green-400 rounded-full mr-2" />
+                  <div className="text-xs text-green-400">T Chasing Higher Dreams</div>
+                </div>
+              </div>
+              <div className="absolute top-8 left-0 w-full h-4 bg-gray-600 rounded">
+                <div className="flex items-center h-full px-2">
+                  <div className="w-1 h-full bg-purple-400 rounded-full mr-2" />
+                  <div className="text-xs text-purple-400">kanang min.mp4</div>
+                  <div className="text-xs text-white/60 ml-2">Adjust music</div>
+                </div>
+              </div>
+              <div className="absolute top-1/2 left-1/4 w-0.5 h-full bg-white rounded-full">
+                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white rounded-full" />
+              </div>
+            </div>
           </div>
 
           {/* Tool panels */}
@@ -716,24 +772,41 @@ export default function EditPage() {
           {/* panels removed to match provided design */}
         </div>
 
-        {/* Bottom toolbar */}
+        {/* Bottom Action Bar - CapCut Style */}
         <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 py-2 px-3 pb-[env(safe-area-inset-bottom)]">
-          <div className="mx-auto max-w-md overflow-x-auto">
-            <div className="min-w-[560px] grid grid-cols-9 gap-3 text-center text-[11px] text-white/90">
-              <ToolbarItem label="Edit" icon={<Scissors className="h-4 w-4" />} active={activeTool==='edit'} onClick={() => setActiveTool('edit')} />
-              <ToolbarItem label="Crop" icon={<CropIcon className="h-4 w-4" />} active={activeTool==='crop'} onClick={() => setActiveTool('crop')} />
-              <ToolbarItem label="Adjust" icon={<SlidersHorizontal className="h-4 w-4" />} active={activeTool==='adjust'} onClick={() => setActiveTool('adjust')} />
-              <ToolbarItem label="Rotate" icon={<RotateIcon className="h-4 w-4" />} active={activeTool==='rotate'} onClick={() => setActiveTool('rotate')} />
-              <ToolbarItem label="Speed" icon={<Gauge className="h-4 w-4" />} active={activeTool==='speed'} onClick={() => setActiveTool('speed')} />
-              <ToolbarItem label="Sound" icon={<Music className="h-4 w-4" />} active={activeTool==='sound'} onClick={() => setActiveTool('sound')} />
-              <ToolbarItem label="Text" icon={<TypeIcon className="h-4 w-4" />} active={activeTool==='text'} onClick={() => setActiveTool('text')} />
-              <ToolbarItem label="Effect" icon={<Sparkles className="h-4 w-4" />} active={activeTool==='effect'} onClick={() => setActiveTool('effect')} />
-              <ToolbarItem label="Magic" icon={<Wand2 className="h-4 w-4" />} active={activeTool==='magic'} onClick={() => setActiveTool('magic')} />
-            </div>
-          </div>
-          <div className="mt-2 flex justify-between max-w-md mx-auto text-xs text-white/50">
-            <span />
-            <span />
+          <div className="flex w-full items-center justify-around px-8">
+            <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+              <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                <div className="h-3 w-1 bg-white rounded" />
+                <div className="h-3 w-1 bg-white rounded ml-0.5" />
+              </div>
+              <span>Split</span>
+            </Button>
+            <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+              <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                <RotateCcw className="h-3 w-3 rotate-45" />
+                <RotateCcw className="h-3 w-3 -rotate-45" />
+              </div>
+              <span>Replace</span>
+            </Button>
+            <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+              <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                <div className="h-3 w-3 bg-white rounded-sm" />
+              </div>
+              <span>Delete</span>
+            </Button>
+            <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+              <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                <div className="h-3 w-3 border border-white rounded-full" />
+              </div>
+              <span>Speed</span>
+            </Button>
+            <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+              <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                <div className="h-3 w-3 border border-white rounded-sm" />
+              </div>
+              <span>Crop</span>
+            </Button>
           </div>
         </div>
       </main>
