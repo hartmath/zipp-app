@@ -1,254 +1,266 @@
-"use client";
+"use client"
 
-import * as React from "react";
+import { useState, useRef, useCallback } from "react"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Scissors, 
+  Trash2, 
+  Copy,
+  Volume2,
+  VolumeOff,
+  ZoomIn,
+  ZoomOut,
+  Magnet
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
-type OverlayClip = { id: string; text: string; start: number; end: number; color: string };
+interface TimelineTrack {
+  id: string
+  type: 'video' | 'audio' | 'text'
+  name: string
+  elements: TimelineElement[]
+  muted?: boolean
+  locked?: boolean
+}
 
-export function Timeline({
-  duration,
-  playhead,
-  trimStart,
-  trimEnd,
-  overlays,
-  hasMusic,
-  audioStart,
-  audioEnd,
-  videoSegments,
-  onChangePlayhead,
-  onChangeTrim,
-  onChangeOverlay,
-  onChangeAudio,
-  onAddVideoAt,
-  onAddTextAt,
-  onAddAudioAt,
-  layout = 'stack',
-}: {
-  duration: number;
-  playhead: number;
-  trimStart: number;
-  trimEnd: number;
-  overlays: OverlayClip[];
-  hasMusic?: boolean;
-  audioStart?: number;
-  audioEnd?: number;
-  videoSegments?: { start: number; end: number }[];
-  onChangePlayhead: (t: number) => void;
-  onChangeTrim: (start: number, end: number) => void;
-  onChangeOverlay?: (id: string, start: number, end: number) => void;
-  onChangeAudio?: (start: number, end: number) => void;
-  onAddVideoAt?: (t: number) => void;
-  onAddTextAt?: (t: number) => void;
-  onAddAudioAt?: (t: number) => void;
-  layout?: 'stack' | 'left';
-}) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [drag, setDrag] = React.useState<null | { kind: "playhead" | "start" | "end" | "audioStart" | "audioEnd" | { id: string; edge: "left" | "right" | "move"; length?: number }; startX: number; base: number }>(null);
+interface TimelineElement {
+  id: string
+  start: number
+  end: number
+  name: string
+  color: string
+}
 
-  const pxPerSec = 40; // simple scale
-  const leftOffsetPx = layout === 'left' ? 56 + 8 : 0; // label column + gap
-  const width = leftOffsetPx + Math.max(240, duration * pxPerSec);
+interface TimelineProps {
+  duration?: number
+  currentTime?: number
+  onSeek?: (time: number) => void
+  onPlay?: () => void
+  onPause?: () => void
+  isPlaying?: boolean
+}
 
-  const clamp = (v: number) => Math.max(0, Math.min(duration, v));
-
-  const toTime = (clientX: number) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    const x = rect ? clientX - rect.left - leftOffsetPx : 0;
-    return clamp(x / pxPerSec);
-  };
-
-  const onDown = (e: React.MouseEvent, kind: "playhead" | "start" | "end") => {
-    e.preventDefault();
-    const base = kind === "playhead" ? playhead : kind === "start" ? trimStart : trimEnd;
-    setDrag({ kind, startX: e.clientX, base });
-  };
-
-  const onOverlayDown = (e: React.MouseEvent, id: string, edge: "left" | "right" | "move") => {
-    e.preventDefault();
-    const clip = overlays.find((o) => o.id === id);
-    if (!clip) return;
-    const base = edge === "left" ? clip.start : edge === "right" ? clip.end : clip.start;
-    const length = clip.end - clip.start;
-    setDrag({ kind: { id, edge, length }, startX: e.clientX, base });
-  };
-
-  React.useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      if (!drag) return;
-      const dx = (e.clientX - drag.startX) / pxPerSec;
-      const next = clamp(drag.base + dx);
-      if (drag.kind === "playhead") {
-        onChangePlayhead(next);
-      } else if (drag.kind === "start") {
-        onChangeTrim(Math.min(next, trimEnd - 0.1), trimEnd);
-      } else if (drag.kind === "end") {
-        onChangeTrim(trimStart, Math.max(next, trimStart + 0.1));
-      } else if (drag.kind === "audioStart" && onChangeAudio) {
-        const end = typeof audioEnd === 'number' ? audioEnd : duration;
-        onChangeAudio(Math.min(next, end - 0.1), end);
-      } else if (drag.kind === "audioEnd" && onChangeAudio) {
-        const start = typeof audioStart === 'number' ? audioStart : 0;
-        onChangeAudio(start, Math.max(next, start + 0.1));
-      } else if (typeof drag.kind === "object" && onChangeOverlay) {
-        const { id, edge } = drag.kind;
-        const clip = overlays.find((o) => o.id === id);
-        if (!clip) return;
-        if (edge === "left") onChangeOverlay(id, Math.min(next, clip.end - 0.1), clip.end);
-        else if (edge === "right") onChangeOverlay(id, clip.start, Math.max(next, clip.start + 0.1));
-        else if (edge === "move") {
-          const len = drag.kind.length ?? (clip.end - clip.start);
-          const start = clamp(next);
-          const end = clamp(start + len);
-          // keep within [0,duration]
-          if (end > duration) {
-            const diff = end - duration;
-            onChangeOverlay(id, start - diff, duration);
-          } else {
-            onChangeOverlay(id, start, end);
-          }
-        }
-      }
-    };
-    const onUp = () => setDrag(null);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [drag, onChangePlayhead, onChangeTrim, overlays, trimEnd, trimStart, duration]);
-
-  const rows = [
+export function Timeline({ 
+  duration = 60, 
+  currentTime = 0, 
+  onSeek, 
+  onPlay, 
+  onPause, 
+  isPlaying = false 
+}: TimelineProps) {
+  const [tracks] = useState<TimelineTrack[]>([
     {
-      key: 'video',
-      label: 'Video',
-      color: 'bg-yellow-500',
-      content: (
-        <div className="relative h-7 bg-gray-800/40 rounded mb-2" onDoubleClick={(e) => onAddVideoAt && onAddVideoAt(toTime(e.clientX))}>
-          {onAddVideoAt && (
-            <button
-              type="button"
-              className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white z-20 border border-white/20"
-              onClick={(e) => { e.stopPropagation(); onAddVideoAt(playhead); }}
-            >
-              Add Video
-            </button>
-          )}
-          {(videoSegments && videoSegments.length > 0 ? videoSegments : [{ start: trimStart, end: trimEnd }]).map((seg, idx) => (
-            <div key={idx} className="absolute top-0 bottom-0 bg-yellow-500/70 rounded" style={{ left: seg.start * pxPerSec, width: Math.max(2, (seg.end - seg.start) * pxPerSec) }} />
-          ))}
-          <Handle x={trimStart * pxPerSec} onMouseDown={(e) => onDown(e, "start")} />
-          <Handle x={trimEnd * pxPerSec} onMouseDown={(e) => onDown(e, "end")} />
-        </div>
-      )
+      id: 'video-1',
+      type: 'video',
+      name: 'Video Track 1',
+      elements: [
+        { id: 'video-1', start: 0, end: 10, name: 'Video Clip 1', color: '#3b82f6' },
+        { id: 'video-2', start: 15, end: 25, name: 'Video Clip 2', color: '#3b82f6' }
+      ]
     },
     {
-      key: 'text',
-      label: 'Text',
-      color: 'bg-green-500',
-      content: (
-        <div className="relative h-7 bg-gray-800/40 rounded mb-2" onDoubleClick={(e) => onAddTextAt && onAddTextAt(toTime(e.clientX))}>
-          {onAddTextAt && (
-            <button
-              type="button"
-              className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white z-20 border border-white/20"
-              onClick={(e) => { e.stopPropagation(); onAddTextAt(playhead); }}
-            >
-              Add Text
-            </button>
-          )}
-          {overlays.map((o) => (
-            <div key={o.id} className="absolute top-1/2 -translate-y-1/2 h-4 rounded bg-green-500/80 cursor-grab active:cursor-grabbing" style={{ left: o.start * pxPerSec, width: Math.max(8, (o.end - o.start) * pxPerSec) }} onMouseDown={(e) => onOverlayDown(e, o.id, "move")}>
-              <div className="absolute -left-1 top-0 bottom-0 w-2 cursor-ew-resize" onMouseDown={(e) => onOverlayDown(e, o.id, "left")} />
-              <div className="absolute -right-1 top-0 bottom-0 w-2 cursor-ew-resize" onMouseDown={(e) => onOverlayDown(e, o.id, "right")} />
-            </div>
-          ))}
-        </div>
-      )
+      id: 'audio-1',
+      type: 'audio',
+      name: 'Audio Track 1',
+      elements: [
+        { id: 'audio-1', start: 0, end: 30, name: 'Background Music', color: '#10b981' }
+      ]
     },
     {
-      key: 'sound',
-      label: 'Sound',
-      color: 'bg-purple-500',
-      content: (
-        <div className="relative h-7 bg-gray-800/40 rounded mb-4" onDoubleClick={(e) => onAddAudioAt && onAddAudioAt(toTime(e.clientX))}>
-          {onAddAudioAt && (
-            <button
-              type="button"
-              className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] px-2 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white z-20 border border-white/20"
-              onClick={(e) => { e.stopPropagation(); onAddAudioAt(playhead); }}
-            >
-              Add Music
-            </button>
-          )}
-          {hasMusic && (
-            <>
-              <div className="absolute top-1/2 -translate-y-1/2 h-4 rounded bg-purple-500/80" style={{ left: (audioStart ?? 0) * pxPerSec, width: Math.max(8, ((audioEnd ?? duration) - (audioStart ?? 0)) * pxPerSec) }} />
-              <div className="absolute -left-1 top-0 bottom-0 w-2 cursor-ew-resize" style={{ left: (audioStart ?? 0) * pxPerSec }} onMouseDown={(e) => setDrag({ kind: "audioStart", startX: e.clientX, base: (audioStart ?? 0) })} />
-              <div className="absolute -right-1 top-0 bottom-0 w-2 cursor-ew-resize" style={{ left: (audioEnd ?? duration) * pxPerSec }} onMouseDown={(e) => setDrag({ kind: "audioEnd", startX: e.clientX, base: (audioEnd ?? duration) })} />
-            </>
-          )}
-        </div>
-      )
+      id: 'text-1',
+      type: 'text',
+      name: 'Text Track 1',
+      elements: [
+        { id: 'text-1', start: 5, end: 15, name: 'Title Text', color: '#f59e0b' }
+      ]
     }
-  ];
+  ])
+
+  const [zoom, setZoom] = useState(1)
+  const [snapping, setSnapping] = useState(true)
+  const timelineRef = useRef<HTMLDivElement>(null)
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const handleTimelineClick = useCallback((e: React.MouseEvent) => {
+    if (!timelineRef.current || !onSeek) return
+    
+    const rect = timelineRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const width = rect.width
+    const time = (x / width) * duration
+    onSeek(Math.max(0, Math.min(time, duration)))
+  }, [duration, onSeek])
+
+  const pixelsPerSecond = 50 * zoom
 
   return (
-    <div className="w-full overflow-x-auto select-none">
-      <div className="min-w-full">
-        <div className="bg-black/50 rounded-md border border-gray-800 p-2">
-          <div className="relative" ref={containerRef} onClick={(e) => onChangePlayhead(toTime(e.clientX))}>
-            <div className="relative" style={{ width }}>
-              <div className="h-6 relative">
-                {Array.from({ length: Math.ceil(duration) + 1 }).map((_, i) => (
-                  <div key={i} className="absolute top-0 h-full text-[10px] text-white/60" style={{ left: leftOffsetPx + i * pxPerSec }}>
-                    <div className="w-px h-3 bg-white/30" />
-                    <div className="-translate-x-1/2 mt-1">{i}s</div>
-                  </div>
-                ))}
-              </div>
+    <div className="h-full bg-gray-900 border-t border-gray-700 flex flex-col">
+      {/* Timeline Controls */}
+      <div className="flex items-center justify-between p-3 border-b border-gray-700">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={isPlaying ? onPause : onPlay}
+            className="h-8 w-8 p-0"
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <SkipBack className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <SkipForward className="h-4 w-4" />
+          </Button>
+        </div>
 
-              {layout === 'left' ? (
-                <div className="grid grid-cols-[56px_1fr] gap-2">
-                  {rows.map((r) => (
-                    <React.Fragment key={r.key}>
-                      <div className="flex items-center text-[10px] text-white/70"><span className={`inline-block h-2 w-2 rounded ${r.color} mr-2`} />{r.label}</div>
-                      {r.content}
-                    </React.Fragment>
-                  ))}
-                </div>
-              ) : (
-                <div>
-                  {rows.map((r) => (
-                    <React.Fragment key={r.key}>
-                      <TrackLabel label={r.label} color={r.color} />
-                      {r.content}
-                    </React.Fragment>
-                  ))}
-                </div>
-              )}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-300">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        </div>
 
-              <div className="absolute top-0 bottom-0 w-px bg-white" style={{ left: leftOffsetPx + playhead * pxPerSec }} onMouseDown={(e) => onDown(e, "playhead")} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSnapping(!snapping)}
+            className={cn("h-8 w-8 p-0", snapping && "bg-blue-600")}
+          >
+            <Magnet className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
+            className="h-8 w-8 p-0"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setZoom(Math.min(3, zoom + 0.1))}
+            className="h-8 w-8 p-0"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Timeline Content */}
+      <div className="flex-1 flex">
+        {/* Track Labels */}
+        <div className="w-48 bg-gray-800 border-r border-gray-700">
+          <div className="p-2 border-b border-gray-700">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Scissors className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Copy className="h-3 w-3" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Trash2 className="h-3 w-3" />
+              </Button>
             </div>
           </div>
+          <ScrollArea className="h-full">
+            {tracks.map((track) => (
+              <div key={track.id} className="p-2 border-b border-gray-700">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => {/* Toggle mute */}}
+                  >
+                    {track.muted ? (
+                      <VolumeOff className="h-3 w-3" />
+                    ) : (
+                      <Volume2 className="h-3 w-3" />
+                    )}
+                  </Button>
+                  <span className="text-sm text-gray-300 truncate">
+                    {track.name}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </ScrollArea>
+        </div>
+
+        {/* Timeline Ruler and Tracks */}
+        <div className="flex-1 flex flex-col">
+          {/* Time Ruler */}
+          <div className="h-8 bg-gray-800 border-b border-gray-700 relative">
+            <div className="absolute inset-0 flex items-center px-2">
+              {Array.from({ length: Math.ceil(duration / 5) }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute text-xs text-gray-400"
+                  style={{ left: `${(i * 5 * pixelsPerSecond) + 8}px` }}
+                >
+                  {formatTime(i * 5)}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Timeline Tracks */}
+          <ScrollArea className="flex-1">
+            <div
+              ref={timelineRef}
+              className="relative h-full cursor-pointer"
+              onClick={handleTimelineClick}
+              style={{ minWidth: `${duration * pixelsPerSecond}px` }}
+            >
+              {/* Playhead */}
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                style={{ left: `${(currentTime / duration) * 100}%` }}
+              >
+                <div className="absolute -top-1 -left-1 w-2 h-2 bg-red-500 rounded-full" />
+              </div>
+
+              {/* Track Elements */}
+              {tracks.map((track, trackIndex) => (
+                <div
+                  key={track.id}
+                  className="relative h-12 border-b border-gray-700"
+                  style={{ top: `${trackIndex * 48}px` }}
+                >
+                  {track.elements.map((element) => (
+                    <div
+                      key={element.id}
+                      className="absolute top-1 bottom-1 rounded border-2 border-white/20 cursor-pointer hover:border-white/40 transition-colors"
+                      style={{
+                        left: `${(element.start / duration) * 100}%`,
+                        width: `${((element.end - element.start) / duration) * 100}%`,
+                        backgroundColor: element.color,
+                      }}
+                    >
+                      <div className="p-1 text-xs text-white truncate">
+                        {element.name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>
-  );
+  )
 }
-
-function Handle({ x, onMouseDown }: { x: number; onMouseDown: (e: React.MouseEvent) => void }) {
-  return (
-    <div className="absolute top-0 -translate-x-1/2 -translate-y-1/4 h-8 w-2 bg-white rounded cursor-ew-resize" style={{ left: x }} onMouseDown={onMouseDown} />
-  );
-}
-
-function TrackLabel({ label, color }: { label: string; color: string }) {
-  return (
-    <div className="flex items-center gap-2 text-[10px] text-white/70 mb-1">
-      <span className={`inline-block h-2 w-2 rounded ${color}`} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-
