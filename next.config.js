@@ -4,16 +4,20 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+  },
+  
+  // Turbopack configuration (moved from experimental)
+  turbopack: {
+    rules: {
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
       },
     },
-    serverComponentsExternalPackages: ['@ffmpeg/ffmpeg'],
   },
+  
+  // Server external packages (moved from experimental)
+  serverExternalPackages: ['@ffmpeg/ffmpeg'],
   
   // Compiler optimizations
   compiler: {
@@ -64,21 +68,8 @@ const nextConfig = {
         },
       }
       
-      // Aggressive minification
+      // Aggressive minification (using built-in Terser)
       config.optimization.minimize = true
-      config.optimization.minimizer = [
-        ...config.optimization.minimizer,
-        new (require('terser-webpack-plugin'))({
-          terserOptions: {
-            compress: {
-              drop_console: true,
-              drop_debugger: true,
-              pure_funcs: ['console.log', 'console.info', 'console.debug'],
-            },
-            mangle: true,
-          },
-        }),
-      ]
     }
     
     // Reduce bundle size
@@ -128,8 +119,7 @@ const nextConfig = {
   // React strict mode
   reactStrictMode: true,
   
-  // SWC minification
-  swcMinify: true,
+  // SWC minification (enabled by default in Next.js 15)
 }
 
 module.exports = nextConfig
