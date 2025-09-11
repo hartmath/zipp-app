@@ -474,15 +474,13 @@ export default function CreatePage() {
       {/* Camera View */}
       <div className="absolute inset-0 z-0">
          {uploadedImageUrl ? (
-            // Show uploaded image preview in half the screen
-            <div className="w-full h-full flex items-center justify-center bg-black">
-              <div className="w-1/2 h-1/2 flex items-center justify-center bg-gray-900/50 rounded-lg border border-white/20">
-                <img 
-                  src={uploadedImageUrl} 
-                  alt="Uploaded media preview"
-                  className="max-w-full max-h-full object-contain rounded-lg"
-                />
-              </div>
+            // Show uploaded image in full-screen editing mode like CapCut
+            <div className="w-full h-full bg-black">
+              <img 
+                src={uploadedImageUrl} 
+                alt="Uploaded media preview"
+                className="w-full h-full object-cover"
+              />
             </div>
          ) : (selectedMode === 'Camera' || selectedMode === 'Photos') ? (
             <>
@@ -584,64 +582,168 @@ export default function CreatePage() {
         <div className="w-7" />
       </header>
 
-      {/* Right Sidebar */}
-      <aside className="absolute right-3 top-1/4 z-10 flex flex-col items-center gap-4">
-        <RightSidebarButton icon={SwitchCamera} label="Flip" onClick={handleFlipCamera} />
-        <RightSidebarButton icon={Zap} label="Flash" isActive={isFlashOn} onClick={handleToggleFlash} />
-        <RightSidebarButton icon={Percent} label="Ratio" isActive={isRatioActive} onClick={() => setIsRatioActive(!isRatioActive)} />
-        <RightSidebarButton icon={Wand2} label="Beautify" isActive={isBeautifyOn} onClick={() => setIsBeautifyOn(!isBeautifyOn)} />
-      </aside>
+      {/* Left Sidebar - Editing Tools (only show when image is uploaded) */}
+      {uploadedImageUrl && (
+        <aside className="absolute left-3 top-1/4 z-10 flex flex-col items-center gap-4">
+          <RightSidebarButton icon={CameraIcon} label="Video" />
+          <RightSidebarButton icon={Wand2} label="Text" />
+          <RightSidebarButton icon={Music} label="Music" />
+        </aside>
+      )}
+
+      {/* Right Sidebar - Camera Controls (only show when no image uploaded) */}
+      {!uploadedImageUrl && (
+        <aside className="absolute right-3 top-1/4 z-10 flex flex-col items-center gap-4">
+          <RightSidebarButton icon={SwitchCamera} label="Flip" onClick={handleFlipCamera} />
+          <RightSidebarButton icon={Zap} label="Flash" isActive={isFlashOn} onClick={handleToggleFlash} />
+          <RightSidebarButton icon={Percent} label="Ratio" isActive={isRatioActive} onClick={() => setIsRatioActive(!isRatioActive)} />
+          <RightSidebarButton icon={Wand2} label="Beautify" isActive={isBeautifyOn} onClick={() => setIsBeautifyOn(!isBeautifyOn)} />
+        </aside>
+      )}
 
       {/* Bottom Controls */}
       <main className="absolute bottom-0 z-10 flex w-full flex-col items-center pb-4">
-        <div className="flex items-center gap-4 text-xs font-medium text-white/80">
-          {(['10m', '60s', '15s'] as Duration[]).map(d => (
-            <button key={d} onClick={() => setSelectedDuration(d)} className={cn(selectedDuration === d && 'text-white font-bold', selectedMode !== 'Camera' && 'hidden')}>
-              {d}
-            </button>
-          ))}
-          <button onClick={() => setSelectedMode('Photos')} className={cn("rounded-full px-3 py-1 text-xs", selectedMode === 'Photos' ? 'bg-white text-black' : 'bg-black/40')}>Photos</button>
-        </div>
+        {uploadedImageUrl ? (
+          // CapCut-style editing interface
+          <>
+            {/* Playback Controls */}
+            <div className="flex items-center gap-4 mb-4">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4 rotate-180" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <div className="h-4 w-4 border border-white rounded-sm" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <ArrowLeft className="h-4 w-4 rotate-180" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-10 w-10 bg-white/20 rounded-full">
+                <div className="h-4 w-4 bg-white rounded-sm" />
+              </Button>
+            </div>
+            
+            {/* Timeline */}
+            <div className="w-full px-4 mb-4">
+              <div className="text-xs text-white/60 mb-2">00:10 / 12:00</div>
+              <div className="relative h-16 bg-gray-800 rounded-lg p-2">
+                <div className="flex items-center h-full">
+                  <div className="w-1 h-full bg-yellow-400 rounded-full mr-2" />
+                  <div className="text-xs text-yellow-400">Voice over</div>
+                  <div className="text-xs text-white/60 ml-2">Adjust music</div>
+                </div>
+                <div className="absolute top-2 left-0 w-full h-12 bg-gray-700 rounded">
+                  <div className="flex items-center h-full px-2">
+                    <div className="w-1 h-full bg-green-400 rounded-full mr-2" />
+                    <div className="text-xs text-green-400">T Chasing Higher Dreams</div>
+                  </div>
+                </div>
+                <div className="absolute top-8 left-0 w-full h-4 bg-gray-600 rounded">
+                  <div className="flex items-center h-full px-2">
+                    <div className="w-1 h-full bg-purple-400 rounded-full mr-2" />
+                    <div className="text-xs text-purple-400">kanang min.mp4</div>
+                    <div className="text-xs text-white/60 ml-2">Adjust music</div>
+                  </div>
+                </div>
+                <div className="absolute top-1/2 left-1/4 w-0.5 h-full bg-white rounded-full">
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white rounded-full" />
+                </div>
+              </div>
+            </div>
 
-        <div className="mt-4 flex w-full items-center justify-around px-8">
-          <Button variant="ghost" className={cn("flex-col gap-1 h-auto p-1 text-xs", isEffectOn && "text-primary")} onClick={() => setIsEffectOn(!isEffectOn)}>
-             <div className="h-6 w-6 rounded-md bg-white/20"></div>
-            <span>Effect</span>
-          </Button>
+            {/* Bottom Action Bar */}
+            <div className="flex w-full items-center justify-around px-8">
+              <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+                <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                  <div className="h-3 w-1 bg-white rounded" />
+                  <div className="h-3 w-1 bg-white rounded ml-0.5" />
+                </div>
+                <span>Split</span>
+              </Button>
+              <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+                <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                  <ArrowLeft className="h-3 w-3 rotate-45" />
+                  <ArrowLeft className="h-3 w-3 -rotate-45" />
+                </div>
+                <span>Replace</span>
+              </Button>
+              <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+                <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                  <div className="h-3 w-3 bg-white rounded-sm" />
+                </div>
+                <span>Delete</span>
+              </Button>
+              <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+                <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                  <div className="h-3 w-3 border border-white rounded-full" />
+                </div>
+                <span>Speed</span>
+              </Button>
+              <Button variant="ghost" className="flex-col gap-1 h-auto p-2 text-xs">
+                <div className="h-6 w-6 bg-white/20 rounded flex items-center justify-center">
+                  <div className="h-3 w-3 border border-white rounded-sm" />
+                </div>
+                <span>Crop</span>
+              </Button>
+            </div>
+          </>
+        ) : (
+          // Original camera controls
+          <>
+            <div className="flex items-center gap-4 text-xs font-medium text-white/80">
+              {(['10m', '60s', '15s'] as Duration[]).map(d => (
+                <button key={d} onClick={() => setSelectedDuration(d)} className={cn(selectedDuration === d && 'text-white font-bold', selectedMode !== 'Camera' && 'hidden')}>
+                  {d}
+                </button>
+              ))}
+              <button onClick={() => setSelectedMode('Photos')} className={cn("rounded-full px-3 py-1 text-xs", selectedMode === 'Photos' ? 'bg-white text-black' : 'bg-black/40')}>Photos</button>
+            </div>
 
-          <button
-            onClick={handleMainButtonPress}
-            className={cn(
-                "h-14 w-14 rounded-full border-4 border-white transition-all duration-300 flex items-center justify-center",
-                isRecording ? "bg-transparent ring-4 ring-primary" : "bg-primary/70 ring-4 ring-primary/30 ring-offset-2 ring-offset-black",
-                selectedMode === 'Photos' && "bg-white ring-white/30"
-            )}
-          >
-            {isRecording && <div className="h-5 w-5 rounded bg-primary" />}
-            {selectedMode === 'Photos' && <CameraIcon className="h-6 w-6 text-black" />}
-            <span className="sr-only">{selectedMode === 'Camera' ? (isRecording ? 'Stop Recording' : 'Start Recording') : 'Take Photo'}</span>
-          </button>
-          
-          <Button variant="ghost" className="flex-col gap-1 h-auto p-1 text-xs" onClick={handleUploadClick}>
-             <Upload className="h-5 w-5" />
-            <span>Upload</span>
-          </Button>
-        </div>
-        
-        <div className="w-full mt-3 flex justify-center items-center gap-8 text-sm text-white/80">
-            <button
-                className={cn("relative py-1 font-semibold after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-5 after:rounded-full after:bg-transparent", selectedMode === 'Camera' && "text-white after:bg-white")}
-                onClick={() => setSelectedMode('Camera')}
-            >
-                Camera
-            </button>
-            <button
-                className={cn("relative py-1 font-semibold after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-5 after:rounded-full after:bg-transparent", selectedMode !== 'Camera' && selectedMode !== 'Photos' && "text-white after:bg-white")}
-            >
-                Templates
-            </button>
-        </div>
-        
+            <div className="mt-4 flex w-full items-center justify-around px-8">
+              <Button variant="ghost" className={cn("flex-col gap-1 h-auto p-1 text-xs", isEffectOn && "text-primary")} onClick={() => setIsEffectOn(!isEffectOn)}>
+                 <div className="h-6 w-6 rounded-md bg-white/20"></div>
+                <span>Effect</span>
+              </Button>
+
+              <button
+                onClick={handleMainButtonPress}
+                className={cn(
+                    "h-14 w-14 rounded-full border-4 border-white transition-all duration-300 flex items-center justify-center",
+                    isRecording ? "bg-transparent ring-4 ring-primary" : "bg-primary/70 ring-4 ring-primary/30 ring-offset-2 ring-offset-black",
+                    selectedMode === 'Photos' && "bg-white ring-white/30"
+                )}
+              >
+                {isRecording && <div className="h-5 w-5 rounded bg-primary" />}
+                {selectedMode === 'Photos' && <CameraIcon className="h-6 w-6 text-black" />}
+                <span className="sr-only">{selectedMode === 'Camera' ? (isRecording ? 'Stop Recording' : 'Start Recording') : 'Take Photo'}</span>
+              </button>
+              
+              <Button variant="ghost" className="flex-col gap-1 h-auto p-1 text-xs" onClick={handleUploadClick}>
+                 <Upload className="h-5 w-5" />
+                <span>Upload</span>
+              </Button>
+            </div>
+            
+            <div className="w-full mt-3 flex justify-center items-center gap-8 text-sm text-white/80">
+                <button
+                    className={cn("relative py-1 font-semibold after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-5 after:rounded-full after:bg-transparent", selectedMode === 'Camera' && "text-white after:bg-white")}
+                    onClick={() => setSelectedMode('Camera')}
+                >
+                    Camera
+                </button>
+                <button
+                    className={cn("relative py-1 font-semibold after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:h-0.5 after:w-5 after:rounded-full after:bg-transparent", selectedMode !== 'Camera' && selectedMode !== 'Photos' && "text-white after:bg-white")}
+                >
+                    Templates
+                </button>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
