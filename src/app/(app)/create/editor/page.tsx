@@ -17,6 +17,9 @@ import { loadBlobUrl } from "@/lib/media-store"
 import { exportTimelineToVideo, ExportOptions } from "@/lib/video-export"
 import { debounce, throttle, PerformanceMonitor } from "@/lib/performance-optimization"
 import { PerformanceMonitorComponent } from "@/components/performance-monitor"
+import { initializePreloading } from "@/lib/preloading-strategy"
+import { webWorkerManager } from "@/lib/web-workers"
+import { initializeIdleTasks, IdleTasks } from "@/lib/request-idle-callback"
 
 export default function CapCutEditor() {
   const router = useRouter()
@@ -39,6 +42,27 @@ export default function CapCutEditor() {
   
   // Performance monitoring
   const performanceMonitor = useMemo(() => PerformanceMonitor.getInstance(), [])
+  
+  // Initialize performance optimizations
+  useEffect(() => {
+    // Initialize preloading strategy
+    initializePreloading()
+    
+    // Initialize idle tasks
+    initializeIdleTasks()
+    
+    // Preload editor components
+    IdleTasks.lazyLoadComponents([
+      '@/components/editor/captions-panel',
+      '@/components/editor/background-removal-panel',
+      '@/components/editor/audio-effects-panel'
+    ])
+    
+    // Cleanup on unmount
+    return () => {
+      webWorkerManager.cleanup()
+    }
+  }, [])
 
   // Panel sizes
   const [mediaPanelSize, setMediaPanelSize] = useState(20)

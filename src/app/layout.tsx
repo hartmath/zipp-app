@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 export const metadata: Metadata = {
   title: 'Zipplign',
@@ -26,10 +27,16 @@ export default function RootLayout({
         <link rel="icon" href="/Images/icon.jpg?v=3" type="image/jpeg" />
         <link rel="apple-touch-icon" href="/Images/icon.jpg?v=3" />
         <link rel="shortcut icon" href="/Images/icon.jpg?v=3" type="image/jpeg" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Zipplign" />
       </head>
       <body className="font-body antialiased h-full">
         {children}
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

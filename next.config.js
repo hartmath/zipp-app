@@ -4,6 +4,15 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+    serverComponentsExternalPackages: ['@ffmpeg/ffmpeg'],
   },
   
   // Compiler optimizations
@@ -25,24 +34,51 @@ const nextConfig = {
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
         chunks: 'all',
+        minSize: 20000,
+        maxSize: 244000,
         cacheGroups: {
           vendor: {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
+            priority: 10,
           },
           editor: {
             test: /[\\/]src[\\/]components[\\/]editor[\\/]/,
             name: 'editor',
             chunks: 'all',
+            priority: 8,
           },
           lib: {
             test: /[\\/]src[\\/]lib[\\/]/,
             name: 'lib',
             chunks: 'all',
+            priority: 6,
+          },
+          ui: {
+            test: /[\\/]src[\\/]components[\\/]ui[\\/]/,
+            name: 'ui',
+            chunks: 'all',
+            priority: 4,
           },
         },
       }
+      
+      // Aggressive minification
+      config.optimization.minimize = true
+      config.optimization.minimizer = [
+        ...config.optimization.minimizer,
+        new (require('terser-webpack-plugin'))({
+          terserOptions: {
+            compress: {
+              drop_console: true,
+              drop_debugger: true,
+              pure_funcs: ['console.log', 'console.info', 'console.debug'],
+            },
+            mangle: true,
+          },
+        }),
+      ]
     }
     
     // Reduce bundle size
@@ -51,6 +87,10 @@ const nextConfig = {
       'react': 'react',
       'react-dom': 'react-dom',
     }
+    
+    // Optimize imports
+    config.resolve.modules = ['node_modules']
+    config.resolve.extensions = ['.js', '.jsx', '.ts', '.tsx', '.json']
     
     return config
   },
