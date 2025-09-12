@@ -5,7 +5,18 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SimpleMusicBrowser } from '@/components/music/simple-music-browser';
-import { type SimpleTrack } from '@/lib/spotify-simple';
+
+type SimpleTrack = {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  duration: string;
+  preview_url: string | null;
+  image_url: string;
+  spotify_url: string;
+  category?: string;
+};
 
 export default function AddMusicPage() {
   const router = useRouter();
