@@ -51,6 +51,11 @@ export default function CreatorStoreSetupPage() {
 
   useEffect(() => {
     const getUser = async () => {
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
@@ -122,6 +127,10 @@ export default function CreatorStoreSetupPage() {
     const filePath = `store-logos/${user.id}/${fileName}`;
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      
       const { error: uploadError } = await supabase.storage
         .from('zippclips')
         .upload(filePath, file, {

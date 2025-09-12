@@ -140,6 +140,11 @@ export default function CreatorStoreManagePage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
