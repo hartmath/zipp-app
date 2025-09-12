@@ -69,6 +69,10 @@ export default function AddFriendsPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      
       // Get all users except current user with follow status
       const { data: usersData, error } = await supabase
         .from('profiles')

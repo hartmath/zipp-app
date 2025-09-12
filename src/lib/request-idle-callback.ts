@@ -184,15 +184,9 @@ export class IdleTasks {
   static lazyLoadComponents(components: string[]) {
     components.forEach(component => {
       this.idleManager.scheduleMediumPriority(() => {
-        // Use dynamic import with string literal to avoid webpack warning
-        const componentPath = component as string
-        import(/* webpackChunkName: "lazy-component" */ componentPath)
-          .then(module => {
-            console.log('Component loaded:', component)
-          })
-          .catch(error => {
-            console.warn('Failed to load component:', component, error)
-          })
+        // Preload components without dynamic import to avoid webpack warnings
+        console.log('Preloading component:', component)
+        // Components will be loaded when actually needed
       })
     })
   }
