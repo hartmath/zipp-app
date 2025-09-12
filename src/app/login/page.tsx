@@ -42,7 +42,11 @@ export default function LoginPage() {
     }
 
     try {
-    const { error } = await supabase.auth.signInWithPassword({
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      
+      const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -120,6 +124,10 @@ export default function LoginPage() {
     setPhoneLoading(true);
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      
       if (!showOTP) {
         // Send OTP
         const { error } = await supabase.auth.signInWithOtp({

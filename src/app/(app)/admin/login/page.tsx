@@ -17,6 +17,10 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
       const { data: { user } } = await supabase.auth.getUser();
