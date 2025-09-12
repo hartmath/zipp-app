@@ -60,6 +60,11 @@ export default function PostPage() {
       }
 
       try {
+        if (!supabase) {
+          console.error('Supabase client not initialized');
+          return;
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Session error:', error);
@@ -283,6 +288,10 @@ export default function PostPage() {
     setLoading(true);
 
     try {
+        if (!supabase) {
+            throw new Error('Supabase client not initialized');
+        }
+        
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user || !user.id) {
