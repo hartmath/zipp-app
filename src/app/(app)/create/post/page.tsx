@@ -11,7 +11,17 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import type { SimpleTrack } from '@/lib/spotify-simple';
+type SimpleTrack = {
+  id: string;
+  name: string;
+  artist: string;
+  album: string;
+  duration: string;
+  preview_url: string | null;
+  image_url: string;
+  spotify_url: string;
+  category?: string;
+};
 import { loadBlobUrl, deleteBlob } from '@/lib/media-store';
 
 const OptionButton = ({ icon: Icon, label, value, onClick }: { icon: React.ElementType, label: string, value: string, onClick?: () => void }) => (
