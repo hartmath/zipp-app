@@ -141,6 +141,11 @@ function AdminMusic() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const [{ data: cats }, { data: trks }] = await Promise.all([
         supabase.from('music_categories').select('*').order('name'),
         supabase.from('music_tracks').select('*').order('created_at', { ascending: false }),
