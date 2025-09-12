@@ -355,6 +355,9 @@ export default function CreatorStoreManagePage() {
     if (!confirm('Are you sure you want to delete this service?')) return;
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
       const { error } = await supabase
         .from('store_services')
         .delete()
