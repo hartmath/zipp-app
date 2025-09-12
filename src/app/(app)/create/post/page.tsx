@@ -186,7 +186,7 @@ export default function PostPage() {
   const renderEditedImage = async (url: string): Promise<Blob> => {
     return new Promise<Blob>(async (resolve, reject) => {
       try {
-        const img = new Image();
+        const img = new window.Image();
         img.crossOrigin = 'anonymous';
         img.onload = async () => {
           const canvas = document.createElement('canvas');
