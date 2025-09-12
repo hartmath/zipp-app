@@ -14,6 +14,11 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const load = async () => {
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/admin/login');
@@ -83,6 +88,11 @@ function AdminStores() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const { data } = await supabase.from('creator_stores').select('*').order('created_at', { ascending: false });
       setRows(data || []);
       setLoading(false);
@@ -90,6 +100,11 @@ function AdminStores() {
     load();
   }, []);
   const togglePublic = async (row: any) => {
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return;
+    }
+    
     await supabase.from('creator_stores').update({ is_public: !row.is_public }).eq('id', row.id);
     setRows((r) => r.map((x) => (x.id === row.id ? { ...x, is_public: !x.is_public } : x)));
   };
@@ -144,6 +159,10 @@ function AdminMusic() {
     if (!file || !form.title) return;
     setUploading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
+      
       const filePath = `admin/${Date.now()}_${file.name}`;
       const { error: upErr } = await (supabase.storage as any).from('music').upload(filePath, file, { cacheControl: '3600', upsert: false });
       if (upErr) throw upErr;
@@ -211,6 +230,11 @@ function AdminProducts() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const { data } = await supabase.from('store_products').select('*').order('created_at', { ascending: false });
       setRows(data || []);
       setLoading(false);
@@ -218,6 +242,11 @@ function AdminProducts() {
     load();
   }, []);
   const toggleAvailable = async (row: any) => {
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return;
+    }
+    
     await supabase.from('store_products').update({ is_available: !row.is_available }).eq('id', row.id);
     setRows((r) => r.map((x) => (x.id === row.id ? { ...x, is_available: !x.is_available } : x)));
   };
@@ -250,6 +279,11 @@ function AdminOrders() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
+      if (!supabase) {
+        console.error('Supabase client not initialized');
+        return;
+      }
+      
       const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       setRows(data || []);
       setLoading(false);
