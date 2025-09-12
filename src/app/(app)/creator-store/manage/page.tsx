@@ -264,6 +264,9 @@ export default function CreatorStoreManagePage() {
 
     setLoading(true);
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
       const serviceData = {
         store_id: store.id,
         name: serviceForm.name,
